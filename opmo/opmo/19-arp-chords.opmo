@@ -1,0 +1,164 @@
+ ;;;---------------------------------------------------------
+;;; AB88 - Waldstein
+;;; Copyright © 2018 Achim Bornhoeft
+;;;
+;;; 23-arp-chords
+;;;
+;;; Cluster tremolo field (random pitches)
+;;;---------------------------------------------------------
+
+(load (merge-pathnames "functions.lisp" *load-truename*))
+(load (merge-pathnames "global.opmo" *load-truename*))
+
+;;;---------------------------------------------------------
+;;; Initialisation
+;;;---------------------------------------------------------
+
+(setf size 10)
+(setf bars (gen-repeat size '(4/4)))
+(setf pause (length-span bars '(-w)))
+
+(setf piano1-1-rh pause piano1-1-lh pause piano1-2-rh pause piano1-2-lh pause 
+      piano1-3-rh pause piano1-3-lh pause piano2-1-rh pause piano2-1-lh pause
+      piano2-2-rh pause piano2-2-lh pause piano2-3-rh pause piano2-3-lh pause)
+
+;;;---------------------------------------------------------
+;;; Parameters
+;;;---------------------------------------------------------
+
+(defparameter no-quarters 48)
+
+(defparameter start-pitches ; (91 63 35 77 49 21)
+  (loop for i in all-ambitus collect (first i)))
+
+;; euclidean divisions of 14 semitones according to the speed of the arpeggios
+(defparameter all-intervals
+  '((5 5 4) 
+    (4 3 4 3) 
+    (3 3 3 3 2) 
+    (3 2 2 3 2 2) 
+    (2 2 2 2 2 2 2) 
+    (2 1 2 2 2 1 2 2) 
+    (2 1 2 1 2 1 2 1 2))) 
+
+(defun palindrome (lis &key double)  
+  (if double (append lis (reverse lis))
+    (append lis (cdr (reverse lis)))))
+
+(defparameter pal-intervals
+  (palindrome all-intervals))
+
+#|
+(defun cycle (lis rep &key (abs nil))
+  (loop repeat rep  
+    for i from 0 
+    if abs
+    collect  (nth (mod i (length lis)) lis)
+    else
+    append lis
+    end))
+|#
+
+(defparameter cycled-intervals
+(cycle pal-intervals no-quarters :abs t))
+
+(defparameter pitches
+  (loop for i in start-pitches 
+    for j from 0 collect
+    (loop for k in (gen-rotate (* j -1) cycled-intervals)
+      collect (dx-x k i))))
+    
+(defparameter all-durations
+  (loop for i in pitches collect
+    (loop for j in i append    
+      (loop repeat (length j) collect (/ 1/4 (length j))))))
+  
+(defparameter all-pitches
+  (mcflatten
+  (loop for i in pitches collect (melodize (respell (chordize (midi-to-pitch i)))))))
+
+(defparameter all-velocities
+  (mcflatten   
+  (loop for i in pitches collect
+    ; (velocity-invert
+    (loop for j in i
+      for k = (get-velocity (/ (length j) 16.0) :type :symbol)
+      collect (loop repeat (length j) collect k)))))
+
+;;;---------------------------------------------------------
+;;; Parts
+;;;---------------------------------------------------------
+
+(setf all-voices
+      (set-assignment 'voice
+        (make-omn
+         :pitch all-pitches
+         :length all-durations
+         :velocity all-velocities)))
+
+(setf piano1-1-lh voice0 piano1-2-lh voice1 piano1-3-lh voice2
+      piano2-1-lh voice3 piano2-2-lh voice4 piano2-3-lh voice5)
+
+;;;---------------------------------------------------------
+;;; Score and Layout
+;;;---------------------------------------------------------
+
+(def-score 23-arp-chords
+           (:title "AB88"
+                   :composer "Achim Bornhoeft"
+                   :copyright "Copyright © 2018"
+                   :key-signature 'chromatic
+                   :time-signature '((1 1 1 1) 4)
+                   :tempo 80
+                   :layout 
+                   (list
+                    (bracket-group
+                     (brace-group 
+                      (treble-layout 'piano1-1-rh) 
+                      (treble-layout 'piano1-1-lh) :name "Piano 1.1" :abbr "Pno 1.1")
+                     (brace-group
+                      (treble-layout 'piano1-2-rh) 
+                      (treble-layout 'piano1-2-lh) :name "Piano 1.2" :abbr "Pno 1.2")
+                     (brace-group
+                      (bass-layout 'piano1-3-rh) 
+                      (bass-layout 'piano1-3-lh) :name "Piano 1.3" :abbr "Pno 1.3"))
+                    (bracket-group
+                     (brace-group
+                      (treble-layout 'piano2-1-rh)
+                      (treble-layout 'piano2-1-lh) :name "Piano 2.1" :abbr "Pno 2.1")
+                     (brace-group
+                      (treble-layout 'piano2-2-rh) 
+                      (bass-layout 'piano2-2-lh) :name "Piano 2.2" :abbr "Pno 2.2")
+                     (brace-group
+                      (bass-layout 'piano2-3-rh)
+                      (bass-layout'piano2-3-lh) :name "Piano 2.3" :abbr "Pno 2.3"))))	
+  
+  ;;; Piano I
+  
+  (piano1-1-rh :omn piano1-1-rh :channel 1 :pan 32)  
+  (piano1-1-lh :omn piano1-1-lh :channel 2 :pan 32)
+  
+  (piano1-2-rh :omn piano1-2-rh :channel 3 :pan 32)
+  (piano1-2-lh :omn piano1-2-lh :channel 4 :pan 32)
+  
+  (piano1-3-rh :omn piano1-3-rh :channel 5 :pan 32)
+  (piano1-3-lh :omn piano1-3-lh :channel 6 :pan 32)
+  
+  ;;; Piano II
+  
+  (piano2-1-rh :omn piano2-1-rh :channel 7 :pan 96)
+  (piano2-1-lh :omn piano2-1-lh :channel 8 :pan 96)
+  
+  (piano2-2-rh :omn piano2-2-rh :channel 9 :pan 96)
+  (piano2-2-lh :omn piano2-2-lh :channel 11 :pan 96)
+  
+  (piano2-3-rh :omn piano2-3-rh :channel 12 :pan 96)
+  (piano2-3-lh :omn piano2-3-lh :channel 13 :pan 96))
+
+(display-musicxml '23-arp-chords)
+(display-midi '23-arp-chords)
+
+#|
+(with-open-file (file "~/Desktop/23-arp-chords.xml" :direction :output :if-exists :supersede)
+  (score-to-musicxml (get-score '23-arp-chords) file))
+|#

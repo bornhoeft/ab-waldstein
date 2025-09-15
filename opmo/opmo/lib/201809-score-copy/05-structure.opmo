@@ -1,0 +1,196 @@
+;;;---------------------------------------------------------
+;;; AB88 - Waldstein
+;;; Copyright © 2018 Achim Bornhoeft
+;;;
+;;; Structure 5
+;;;
+;;; Field of repetitions in different speeds
+;;;---------------------------------------------------------
+
+(load (merge-pathnames "functions.lisp" *load-truename*))
+(load (merge-pathnames "global.opmo" *load-truename*))
+
+;;;---------------------------------------------------------
+;;; Initialisation
+;;;---------------------------------------------------------
+
+(setf size 8)
+(setf bars (gen-repeat size '(4/4)))
+(setf pause (length-span bars '(-w)))
+
+(setf piano1-1-rh pause piano1-1-lh pause piano1-2-rh pause piano1-2-lh pause 
+      piano1-3-rh pause piano1-3-lh pause piano2-1-rh pause piano2-1-lh pause
+      piano2-2-rh pause piano2-2-lh pause piano2-3-rh pause piano2-3-lh pause)
+
+;;;---------------------------------------------------------
+;;; Parameters
+;;;---------------------------------------------------------
+
+(defparameter trans-lis '(-7 -7 0 0 7 7 0 0 7 7 14 14))
+
+;;; pitches-hands see global.opmo
+(defparameter trans-pitches
+    (loop for i in pitches-hands
+      for j in trans-lis
+      collect (integer-transpose j i)))
+
+;;; pitch repetitions
+ 
+;; (defparameter divisors '(8 8 6 6 4 4 7 7 5 5 3 3))
+(defparameter divisors '(4 4 8 8 6 6 3 3 7 7 5 5))
+
+(defparameter measures 20)
+ 
+(defparameter no-pitches
+  (loop for i in divisors collect (* measures 4 i)))
+ 
+#|
+(defparameter reps-lis 
+'((15 16 18) (15 16 18) (11 12 13) (11 12 13) (7 8 9) (7 8 9) 
+  (13 14 15) (13 14 15) (9 10 11) (9 10 11) (5 6 7) (5 6 7)))
+|#
+
+(defparameter reps-lis 
+'((7 8 9) (7 8 9) (15 16 18) (15 16 18) (11 12 13) (11 12 13) 
+  (5 6 7) (5 6 7) (13 14 15) (13 14 15) (9 10 11) (9 10 11)))
+
+;; (length no-pitches)
+  
+(defun rep-pitches (total reps values &key norep seed)
+  (let* ((size (rnd-sum total reps :seed seed))
+         (pitch (rnd-sample (length size) values :norep norep :seed seed)))
+    (gen-repeat size pitch)))
+
+;; (rep-pitches  20 '(2 3 4) (midi-to-pitch '(60 53 87)) :norep t :seed 123) 
+
+(defparameter all-pitches
+  (loop for i in no-pitches
+  for j in reps-lis
+  for k in trans-pitches
+  initially (rnd-seed 13)
+  collect (rep-pitches i j k :norep t :seed (seed)))) 
+
+;; (length all-durations)
+                      
+(defparameter all-durations
+  (loop for i in divisors collect
+    (loop repeat (* measures 4 i) collect (/ 1/4 i))))
+
+;;; NEU: Dynamik
+#|
+(defparameter velocities
+  (loop for i in all-pitches collect
+    (flatten (loop for j in i 
+      for k from 0 collect
+      (if (evenp k)
+      (loop repeat (- (length j) 1)
+      collect '< into reslis
+      finally (return (cons 'pp< reslis)))
+       (loop repeat (- (length j) 1)
+      collect '> into reslis
+      finally (return (cons 'f> reslis ))))))))
+|#
+
+(defun rep-velocity (total reps divisor &key seed)
+  (let* ((rnd-size (rnd-sum total 
+                            (loop for i in reps collect (* i divisor))
+                            :seed seed)))
+    (gen-repeat rnd-size (gen-repeat (length rnd-size) divisor)))) 
+
+(defparameter velocities
+  (loop for a in no-pitches
+    for b in divisors
+    initially (rnd-seed 12)
+    collect
+    (flatten 
+     (loop for i in     
+       (rep-velocity a '(2 3 4) b :seed (seed))
+       for k from 0 collect
+       (if (evenp k)
+         (loop repeat (- (length i) 1)
+           collect '< into reslis
+           finally (return (cons 'pp< reslis)))
+         (loop repeat (- (length i) 1)
+           collect '> into reslis
+           finally (return (cons 'f> reslis ))))))))
+                
+;;;---------------------------------------------------------
+;;; AB88 - Waldstein
+;;; Copyright © 2018 Achim Bornhoeft
+;;;
+;;; Structure 4
+;;;
+;;; Repetition field
+;;;---------------------------------------------------------
+
+(setf all-voices
+      (set-assignment 'voice
+        (make-omn
+         :pitch (midi-to-pitch (flatten all-pitches))
+         :length all-durations
+         :velocity velocities)))
+
+(setf piano1-1-rh voice0 piano1-2-rh voice2 piano1-3-rh voice4
+      piano2-1-rh voice6 piano2-2-rh voice8 piano2-3-rh voice10)
+
+(setf piano1-1-lh voice1 piano1-2-lh voice3 piano1-3-lh voice5
+      piano2-1-lh voice7 piano2-2-lh voice9 piano2-3-lh voice11)
+
+;;;---------------------------------------------------------
+;;; Score and Layout
+;;;---------------------------------------------------------
+
+(def-score repetition-field
+           (:title "AB88"
+                   :composer "Achim Bornhoeft"
+                   :copyright "Copyright © 2018"
+                   :key-signature 'chromatic
+                   :time-signature '((1 1 1 1) 4)
+                   :tempo 80
+                   :layout 
+                   (list
+                    (bracket-group
+                     (brace-group 
+                      (treble-layout 'piano1-1-rh) 
+                      (treble-layout 'piano1-1-lh) :name "Piano 1.1" :abbr "Pno 1.1")
+                     (brace-group
+                      (treble-layout 'piano1-2-rh) 
+                      (treble-layout 'piano1-2-lh) :name "Piano 1.2" :abbr "Pno 1.2")
+                     (brace-group
+                      (bass-layout 'piano1-3-rh) 
+                      (bass-layout 'piano1-3-lh) :name "Piano 1.3" :abbr "Pno 1.3"))
+                    (bracket-group
+                     (brace-group
+                      (treble-layout 'piano2-1-rh)
+                      (treble-layout 'piano2-1-lh) :name "Piano 2.1" :abbr "Pno 2.1")
+                     (brace-group
+                      (treble-layout 'piano2-2-rh) 
+                      (bass-layout 'piano2-2-lh) :name "Piano 2.2" :abbr "Pno 2.2")
+                     (brace-group
+                      (bass-layout 'piano2-3-rh)
+                      (bass-layout'piano2-3-lh) :name "Piano 2.3" :abbr "Pno 2.3"))))	
+  
+  ;;; Piano I
+  
+  (piano1-1-rh :omn piano1-1-rh :channel 1 :pan 32)  
+  (piano1-1-lh :omn piano1-1-lh :channel 2 :pan 32)
+  
+  (piano1-2-rh :omn piano1-2-rh :channel 3 :pan 32)
+  (piano1-2-lh :omn piano1-2-lh :channel 4 :pan 32)
+  
+  (piano1-3-rh :omn piano1-3-rh :channel 5 :pan 32)
+  (piano1-3-lh :omn piano1-3-lh :channel 6 :pan 32)
+  
+  ;;; Piano II
+  
+  (piano2-1-rh :omn piano2-1-rh :channel 7 :pan 96)
+  (piano2-1-lh :omn piano2-1-lh :channel 8 :pan 96)
+  
+  (piano2-2-rh :omn piano2-2-rh :channel 9 :pan 96)
+  (piano2-2-lh :omn piano2-2-lh :channel 11 :pan 96)
+  
+  (piano2-3-rh :omn piano2-3-rh :channel 12 :pan 96)
+  (piano2-3-lh :omn piano2-3-lh :channel 13 :pan 96))
+
+(display-musicxml 'repetition-field)
+(display-midi 'repetition-field)

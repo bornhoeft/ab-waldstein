@@ -1,0 +1,142 @@
+;;;---------------------------------------------------------
+;;; AB88 - Waldstein
+;;; Copyright © 2018 Achim Bornhoeft
+;;;
+;;; 02-rep-to-trem
+;;;
+;;; Repetition to trill
+;;;---------------------------------------------------------
+
+;; (load (merge-pathnames "functions.lisp" *load-truename*))
+;; (load (merge-pathnames "global.opmo" *load-truename*))
+
+;;;---------------------------------------------------------
+;;; Initialisation
+;;;---------------------------------------------------------
+ 
+(setf size 8)
+(setf bars (gen-repeat size '(4/4))) 
+(setf pause (length-span bars '(-w)))
+
+(setf piano1-1-rh pause piano1-1-lh pause piano1-2-rh pause piano1-2-lh pause 
+      piano1-3-rh pause piano1-3-lh pause piano2-1-rh pause piano2-1-lh pause
+      piano2-2-rh pause piano2-2-lh pause piano2-3-rh pause piano2-3-lh pause)
+ 
+;;;---------------------------------------------------------
+;;; Parameters
+;;;---------------------------------------------------------
+
+
+(setf interpolations ;; list of distances between each deviation of the repetition
+      (assign-variable 'interp
+                       (list
+                        (mapcar #'round (gen-transition 16 2 27 0.58))
+                        (mapcar #'round (gen-transition 17 2 23 0.55))
+                        (mapcar #'round (gen-transition 18 2 19 0.53))
+                        (mapcar #'round (gen-transition 19 2 15 0.53)))))
+
+
+(defun rep-dev-interpol (interp note seed)
+  " Add a semitone randomly higher or lower."
+  (loop for i in interp 
+    append
+    (loop repeat (- i 1) ;; each distance -1
+      initially (rnd-seed seed)
+      for j = (rnd1 :low 0 :high 1 :seed (seed)) ;; 0 and 1 randomly
+      collect note into reslis
+      finally (return (cons (+ note (if (= j 0) -2 2)) reslis))))) 
+
+(defparameter pitches 
+      (assign-variable 'pitches 
+                       (list
+                        (replace-map '((fs5 gb5)) (midi-to-pitch (rep-dev-interpol interp0 77 7)))
+                        (replace-map '((cs4 db4))(midi-to-pitch (rep-dev-interpol interp1 63 123)))
+                        (replace-map '((eb3 ds3))(midi-to-pitch (rep-dev-interpol interp2 49 123)))
+                        (replace-map '((bb1 as1))(midi-to-pitch (rep-dev-interpol interp3 35 123))))))
+
+(defparameter velocities
+(loop for i in pitches 
+  for e = (eval i) collect
+  (loop for j in
+  (sum-to-size (length e) 5)
+    for x from 0
+  collect
+    (if (evenp x)
+      (loop repeat (- j 1) 
+        collect '< into reslis
+        finally (return (cons 'pp< reslis)))
+      (loop repeat (- j 1)
+        collect '> into reslis
+        finally (return (cons 'p> reslis)))))))
+
+(defparameter all-velocities
+  (assign-variable 'velocity velocities))
+
+(setf piano1-2-rh (make-omn :pitch pitches0 :length '(1/32) :velocity velocity0 :span :pitch)
+      piano1-3-rh (make-omn :pitch pitches2 :length '(1/24) :velocity velocity1 :span :pitch)
+      piano2-2-rh (make-omn :pitch pitches1 :length '(1/28) :velocity velocity2 :span :pitch)
+      piano2-3-rh (make-omn :pitch pitches3 :length '(1/20) :velocity velocity3 :span :pitch))
+
+;;;---------------------------------------------------------
+;;; Score and Layout
+;;;---------------------------------------------------------
+
+(def-score 02-rep-to-trem
+           (:title "AB88"
+                   :composer "Achim Bornhoeft"
+                   :copyright "Copyright © 2018"
+                   :key-signature 'chromatic
+                   :time-signature '((1 1 1 1) 4)
+                   :tempo 80
+                   :layout 
+                   (list
+                    (bracket-group
+                     (brace-group 
+                      (treble-layout 'piano1-1-rh) 
+                      (treble-layout 'piano1-1-lh) :name "Piano 1.1" :abbr "Pno 1.1")
+                     (brace-group
+                      (treble-layout 'piano1-2-rh) 
+                      (treble-layout 'piano1-2-lh) :name "Piano 1.2" :abbr "Pno 1.2")
+                     (brace-group
+                      (bass-layout 'piano1-3-rh) 
+                      (bass-layout 'piano1-3-lh) :name "Piano 1.3" :abbr "Pno 1.3"))
+                    (bracket-group
+                     (brace-group
+                      (treble-layout 'piano2-1-rh)
+                      (treble-layout 'piano2-1-lh) :name "Piano 2.1" :abbr "Pno 2.1")
+                     (brace-group
+                      (treble-layout 'piano2-2-rh) 
+                      (bass-layout 'piano2-2-lh) :name "Piano 2.2" :abbr "Pno 2.2")
+                     (brace-group
+                      (bass-layout 'piano2-3-rh)
+                      (bass-layout'piano2-3-lh) :name "Piano 2.3" :abbr "Pno 2.3"))))	
+  
+  ;;; Piano I
+  
+  (piano1-1-rh :omn piano1-1-rh :channel 1 :pan 32)  
+  (piano1-1-lh :omn piano1-1-lh :channel 2 :pan 32)
+  
+  (piano1-2-rh :omn piano1-2-rh :channel 3 :pan 32)
+  (piano1-2-lh :omn piano1-2-lh :channel 4 :pan 32)
+  
+  (piano1-3-rh :omn piano1-3-rh :channel 5 :pan 32)
+  (piano1-3-lh :omn piano1-3-lh :channel 6 :pan 32)
+  
+  ;;; Piano II
+  
+  (piano2-1-rh :omn piano2-1-rh :channel 7 :pan 96)
+  (piano2-1-lh :omn piano2-1-lh :channel 8 :pan 96)
+  
+  (piano2-2-rh :omn piano2-2-rh :channel 9 :pan 96)
+  (piano2-2-lh :omn piano2-2-lh :channel 11 :pan 96)
+  
+  (piano2-3-rh :omn piano2-3-rh :channel 12 :pan 96)
+  (piano2-3-lh :omn piano2-3-lh :channel 13 :pan 96))
+
+(display-musicxml '02-rep-to-trem)
+(display-midi '02-rep-to-trem)
+
+#|
+(with-open-file (file "~/Documents/projekte/03-kammermusik5-7/Waldstein/sco/xml/02-rep-to-trem.xml" :direction :output :if-exists :supersede)
+  (score-to-musicxml (get-score '02-rep-to-trem) file))
+|#

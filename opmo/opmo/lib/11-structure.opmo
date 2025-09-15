@@ -1,0 +1,145 @@
+;;;---------------------------------------------------------
+;;; AB88
+;;; Copyright © 2018 Achim Bornhoeft
+;;;---------------------------------------------------------
+
+(load (merge-pathnames "functions.lisp" *load-truename*))
+(load (merge-pathnames "global.opmo" *load-truename*))
+
+;;;---------------------------------------------------------
+;;; Initialisation
+;;;---------------------------------------------------------
+
+(setf size 8)
+(setf bars (gen-repeat size '(4/4)))
+(setf pause (length-span bars '(-w)))
+
+(setf piano1-1-rh pause piano1-1-lh pause piano1-2-rh pause piano1-2-lh pause 
+      piano1-3-rh pause piano1-3-lh pause piano2-1-rh pause piano2-1-lh pause
+      piano2-2-rh pause piano2-2-lh pause piano2-3-rh pause piano2-3-lh pause)
+
+;;;---------------------------------------------------------
+;;; Parameters
+;;;---------------------------------------------------------
+
+;;; Pitches
+
+;; (pattern-map '((1 0) 2) (gen-binary-euclidean 1 14 8 8)) => (2 1 2 2 2 1 2 2)
+(defparameter intervals-left '(-2 -1 -2 -2))
+(defparameter intervals-right '(2 1 2 2))
+
+(defparameter all-chords
+  (loop for i in ambitus-hands ; see in global.opmo
+    for j from 0
+    if (evenp j)
+    collect (dx-x intervals-right (first (last i)))
+    if (oddp j)
+    collect (dx-x intervals-left (first i))))
+
+;; (midi-to-pitch all-chords)
+
+;;; Durations
+
+(defparameter rhythms  (loop for i from 1 to 12
+                     collect (/ i 16)))
+
+(defparameter durations (loop for i from 4 to 8 collect (/ i 4)))
+
+(defparameter all-durations1
+  (gen-repeat 12
+  (list (reverse '(8/4 7/4 5/4 3/4 6/4 4/4 2/4 1/4)))))
+
+(defparameter all-durations
+  (mcflatten
+   (matrix-transpose
+    (rnd-order
+     (loop for i in durations
+       collect (loop for j in rhythms 
+                 collect (list j (- j i)))) :seed 123))))
+
+;;;---------------------------------------------------------
+;;; Parts
+;;;---------------------------------------------------------
+
+(setf all-voices
+      (set-assignment 'voice
+        (make-omn
+         :pitch (respell (chordize (midi-to-pitch all-chords)))
+         :length all-durations
+         :velocity '(p))))
+
+(setf piano1-1-rh voice0 piano1-2-rh voice2 piano1-3-rh voice4
+      piano2-1-rh voice6 piano2-2-rh voice8 piano2-3-rh voice10)
+
+(setf piano1-1-lh voice1 piano1-2-lh voice3 piano1-3-lh voice5
+      piano2-1-lh voice7 piano2-2-lh voice9 piano2-3-lh voice11)
+
+;;;---------------------------------------------------------
+;;; Score and Layout
+;;;---------------------------------------------------------
+
+(def-score chord-dissolve
+           (:title "AB88"
+                   :composer "Achim Bornhoeft"
+                   :copyright "Copyright © 2018"
+                   :key-signature 'chromatic
+                   :time-signature '((1 1 1 1) 4)
+                   :tempo 80
+                   :layout 
+                   (list
+                    (bracket-group
+                     (brace-group 
+                      (treble-layout 'piano1-1-rh) 
+                      (treble-layout 'piano1-1-lh) :name "Piano 1.1" :abbr "Pno 1.1")
+                     (brace-group
+                      (treble-layout 'piano1-2-rh) 
+                      (treble-layout 'piano1-2-lh) :name "Piano 1.2" :abbr "Pno 1.2")
+                     (brace-group
+                      (bass-layout 'piano1-3-rh) 
+                      (bass-layout 'piano1-3-lh) :name "Piano 1.3" :abbr "Pno 1.3"))
+                    (bracket-group
+                     (brace-group
+                      (treble-layout 'piano2-1-rh)
+                      (treble-layout 'piano2-1-lh) :name "Piano 2.1" :abbr "Pno 2.1")
+                     (brace-group
+                      (treble-layout 'piano2-2-rh) 
+                      (bass-layout 'piano2-2-lh) :name "Piano 2.2" :abbr "Pno 2.2")
+                     (brace-group
+                      (bass-layout 'piano2-3-rh)
+                      (bass-layout'piano2-3-lh) :name "Piano 2.3" :abbr "Pno 2.3"))))	
+  
+  ;;; Piano I
+  
+  (piano1-1-rh :omn piano1-1-rh :channel 1 :pan 32
+               :sound 'gm :program 0)
+  (piano1-1-lh :omn piano1-1-lh :channel 2 :pan 32
+               :sound 'gm :program 0)
+  
+  (piano1-2-rh :omn piano1-2-rh :channel 3 :pan 32
+               :sound 'gm :program 0)
+  (piano1-2-lh :omn piano1-2-lh :channel 4 :pan 32
+               :sound 'gm :program 0)
+  
+  (piano1-3-rh :omn piano1-3-rh :channel 5 :pan 32
+               :sound 'gm :program 0)
+  (piano1-3-lh :omn piano1-3-lh :channel 6 :pan 32
+               :sound 'gm :program 0)
+  
+  ;;; Piano II
+  
+  (piano2-1-rh :omn piano2-1-rh :channel 7 :pan 96
+               :sound 'gm :program 0)
+  (piano2-1-lh :omn piano2-1-lh :channel 8 :pan 96
+               :sound 'gm :program 0)
+  
+  (piano2-2-rh :omn piano2-2-rh :channel 9 :pan 96
+               :sound 'gm :program 0)
+  (piano2-2-lh :omn piano2-2-lh :channel 11 :pan 96
+               :sound 'gm :program 0)
+  
+  (piano2-3-rh :omn piano2-3-rh :channel 12 :pan 96
+               :sound 'gm :program 0)
+  (piano2-3-lh :omn piano2-3-lh :channel 13 :pan 96))
+
+(display-musicxml 'chord-dissolve)
+(display-midi 'chord-dissolve)

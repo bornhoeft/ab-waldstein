@@ -1,0 +1,112 @@
+;;;---------------------------------------------------------
+;;; AB88
+;;; Copyright © 2018 Achim Bornhoeft
+;;;---------------------------------------------------------
+
+(setf all-chords 
+  '((d6 e6 f6 g6 a6) ; transposed -12
+    (d6 c6 b5 a5 g5) ; transposed -12
+    (bb4 c5 cs5 eb5 f5) 
+    (bb4 gs4 g4 f4 eb4) 
+    (fs2 gs2 a2 b2 cs3) 
+    (fs2 e2 eb2 cs2 b1) 
+    (c6 d6 eb6 f6 g6) 
+    (c6 bb5 a5 g5 f5) 
+    (gs3 bb3 b3 cs4 eb4) 
+    (gs3 fs3 f3 eb3 cs3) 
+    (e1 fs1 g1 a1 b1) 
+    (e2 d2 cs2 b1 a1))) ; transposed +12
+
+(defun chord-dissolve (chord)
+(let* ((id-len-chord (- (length chord) 1)))
+  (loop for i from 0 to id-len-chord append
+    (chordize (loop for j from i to id-len-chord 
+                collect (nth j chord))))))
+
+;; (chord-dissolve '(c4 d4 e4 f4 g4)) 
+;; (chord-dissolve (first all-chords))
+
+(defun dissolve-omn (reps chord mult divisor seed)
+  (loop repeat reps
+    initially (rnd-seed seed)
+    collect (make-omn :length (a/x divisor 
+                                   (rnd-sum-to-size 
+                                    mult (length chord) '(1 2 3 4 5 7 10 12 14 16) :seed (seed)))
+                      :pitch (chord-dissolve chord))))
+
+;; (dissolve-omn 10 '(c4 d4 e4 f4 g4) 123)
+;; (dissolve-omn 10 (first all-chords) 123)
+
+(setf dissolved-voices
+  (loop for i in all-chords
+    initially (rnd-seed 123)
+    collect (dissolve-omn 10 i 32 16 (seed))))
+
+;;;---------------------------------------------------------
+;;; Parts
+;;;---------------------------------------------------------
+
+(setf all-voices
+      (assign-variable 'voice dissolved-voices))
+       
+(setf piano1-1-rh voice0 piano1-2-rh voice2 piano1-3-rh voice4
+      piano2-1-rh voice6 piano2-2-rh voice8 piano2-3-rh voice10)
+
+(setf piano1-1-lh voice1 piano1-2-lh voice3 piano1-3-lh voice5
+      piano2-1-lh voice7 piano2-2-lh voice9 piano2-3-lh voice11)
+
+;;;---------------------------------------------------------
+;;; Score and Layout
+;;;---------------------------------------------------------
+
+(def-score dissolve-rhythm
+            (:title
+            "AB88"
+            :composer "Achim Bornhoeft"
+            :copyright "Copyright © 2018"
+            :key-signature 'chromatic
+            :time-signature '((1 1 1 1) 4)
+            :tempo 80
+            :flexible-clef t
+            :octave-shift t
+            :accidentals :cautionary
+            :layout 
+            (list
+             (bracket-group
+              (piano-layout 'piano1-1-rh 'piano1-1-lh :name "Piano 1.1" :abbr "Pno 1.1")
+              (piano-layout 'piano1-2-rh 'piano1-2-lh :name "Piano 1.2" :abbr "Pno 1.2")
+              (piano-layout 'piano1-3-rh 'piano1-3-lh :name "Piano 1.3" :abbr "Pno 1.3"))
+             (bracket-group
+              (piano-layout 'piano2-1-rh 'piano2-1-lh :name "Piano 2.1" :abbr "Pno 2.1")
+              (piano-layout 'piano2-2-rh 'piano2-2-rh :name "Piano 2.2" :abbr "Pno 2.2")
+              (piano-layout 'piano2-3-rh 'piano2-3-lh :name "Piano 2.3" :abbr "Pno 2.3"))))
+  
+  ;;; Piano I
+  
+  (piano1-1-rh :omn piano1-1-rh :channel 1 :sound 'gm :program 0 :pan 32)  
+  (piano1-1-lh :omn piano1-1-lh :channel 2 :pan 32)
+  
+  (piano1-2-rh :omn piano1-2-rh :channel 3 :pan 32)
+  (piano1-2-lh :omn piano1-2-lh :channel 4 :pan 32)
+  
+  (piano1-3-rh :omn piano1-3-rh :channel 5 :pan 32)
+  (piano1-3-lh :omn piano1-3-lh :channel 6 :pan 32)
+  
+  ;;; Piano II
+  
+  (piano2-1-rh :omn piano2-1-rh :channel 7 :pan 96)
+  (piano2-1-lh :omn piano2-1-lh :channel 8 :pan 96)
+  
+  (piano2-2-rh :omn piano2-2-rh :channel 9 :pan 96)
+  (piano2-2-lh :omn piano2-2-lh :channel 11 :pan 96)
+  
+  (piano2-3-rh :omn piano2-3-rh :channel 12 :pan 96)
+  (piano2-3-lh :omn piano2-3-lh :channel 13 :pan 96)
+  )
+
+(display-musicxml 'dissolve-rhythm)
+(display-midi 'dissolve-rhythm)
+
+(with-open-file (file "~/Desktop/dissolve-rhythm.xml" :direction :output :if-exists :supersede)
+  (score-to-musicxml (get-score 'dissolve-rhythm) file))
+

@@ -1,0 +1,169 @@
+;;;---------------------------------------------------------
+;;; AB88 - Waldstein
+;;; Copyright © 2018 Achim Bornhoeft
+;;;
+;;; 12-chord-diss-51
+;;;
+;;; Chord field dissolving from 5 to 1 notes in different rhythms
+;;;---------------------------------------------------------
+
+(load (merge-pathnames "functions.lisp" *load-truename*))
+(load (merge-pathnames "global.opmo" *load-truename*))
+
+;;;---------------------------------------------------------
+;;; Initialisation
+;;;---------------------------------------------------------
+
+(setf size 10)
+(setf bars (gen-repeat size '(4/4)))
+(setf pause (length-span bars '(-w)))
+
+(setf piano1-1-rh pause piano1-1-lh pause piano1-2-rh pause piano1-2-lh pause 
+      piano1-3-rh pause piano1-3-lh pause piano2-1-rh pause piano2-1-lh pause
+      piano2-2-rh pause piano2-2-lh pause piano2-3-rh pause piano2-3-lh pause)
+
+;; (init-seed 123)
+(init-seed 2)
+
+;;;---------------------------------------------------------
+;;; Parameters
+;;;---------------------------------------------------------
+
+;;; Pitches
+
+;; (gen-binary-euclidean 1 14 6 6)
+
+(defparameter intervals '(3 2 2 3))
+
+(defparameter no-events 5)
+
+(defparameter permuted-intervals (rnd-sample no-events (permute intervals) :norep t))
+
+;; ambitus-hands see. global.opmo
+;; ((105 98) (98 91) (77 70) (70 63) (49 42) (42 35) (91 84) (84 77) (63 56) (56 49) (35 28) (28 21))
+
+(defparameter start-pitches (loop for i in ambitus-hands
+                              for j from 0
+                              if (evenp j) collect (first i)
+                              if (oddp j) collect (second i)))
+
+;; (midi-to-pitch (cddr start-pitches))
+
+(defparameter all-chords 
+  (cddr (loop for i in start-pitches 
+    initially (init-seed 123)
+    collect
+          (respell
+    (midi-to-pitch
+    (dx-x (rnd-sample (length permuted-intervals) permuted-intervals :norep t) i))))))
+
+(defparameter no-measures 10)
+
+;; (defparameter durs (print (reverse (rnd-sum-to-size (* 4 no-measures) no-events '(4 5 6 7 8)))))
+;; (defparameter durs '(6 5 4 5 7 5 8))
+
+(defparameter durs '(6 7 8 9 10))
+
+#|
+(defparameter remain (rnd-order (gen-transition 3 1 no-events 1 :rounded t) :seed 13))
+
+(defparameter all-omn
+  (loop for i in all-chords collect
+    (loop for j in i
+      for k in durs
+      for m in remain
+      initially (rnd-seed 23)
+      for first-len = (rnd-pick '(1/16 1/8 3/8 1/4))
+      for first-rest = (rnd-pick '(0 -1/16 -1/8 -3/16))
+      for last-len = (+ (- (/ k 4) first-len) first-rest)
+      collect (append 
+               (append (cons (when (not (zerop first-rest)) first-rest) (cons first-len (chordize j))) 
+                       '(tie)) 
+               (cons last-len (chordize (rnd-unique m j)))))))
+
+(defparameter remain 
+  (loop repeat 5
+    initially (init-seed 13)
+    collect (rnd-order (gen-transition 3 1 no-events 1 :rounded t))
+    collect (gen-transition 2 1 no-events 0.7 :rounded t)))
+|#
+
+(defparameter remain (gen-transition 2 1 no-events 0.7 :rounded t))
+
+(defparameter all-omn
+  (loop for i in all-chords 
+    collect
+    (loop for j in i
+      for k in durs
+      for m in remain
+      initially (rnd-seed 13)
+      for first-len = (rnd-pick '(1/16 1/8 3/8 1/4))
+      for first-rest = (rnd-pick '(0 -1/16 -1/8 -3/16))
+      for last-len = (+ (- (/ k 4) first-len) first-rest)
+      collect (append 
+               (append (cons (when (not (zerop first-rest)) first-rest) (cons first-len (chordize j))) 
+                       '(tie)) 
+               (cons last-len (chordize (rnd-unique m j)))))))
+
+;;;---------------------------------------------------------
+;;; Parts
+;;;---------------------------------------------------------
+
+(setf all-voices
+      (set-assignment 'voice all-omn))
+       
+(setf piano1-2-rh voice0 piano1-3-rh voice2 piano2-1-rh voice4 piano2-2-rh voice6 piano2-3-rh voice8)
+
+(setf piano1-2-lh voice1 piano1-3-lh voice3 piano2-1-lh voice5 piano2-2-lh voice7 piano2-3-lh voice9)
+
+;;;---------------------------------------------------------
+;;; Score and Layout
+;;;---------------------------------------------------------
+
+(def-score 12-chord-diss-51
+           (:title
+            "AB88"
+            :composer "Achim Bornhoeft"
+            :copyright "Copyright © 2018"
+            :key-signature 'chromatic
+            :time-signature '((1 1 1 1) 4)
+            :tempo 80
+            :flexible-clef t
+            :octave-shift nil
+            :accidentals :cautionary
+            :layout 
+            (list
+             (bracket-group
+              (piano-layout 'piano1-1-rh 'piano1-1-lh :name "Piano 1.1" :abbr "Pno 1.1")
+              (piano-layout 'piano1-2-rh 'piano1-2-lh :name "Piano 1.2" :abbr "Pno 1.2")
+              (piano-layout 'piano1-3-rh 'piano1-3-lh :name "Piano 1.3" :abbr "Pno 1.3"))
+             (bracket-group
+              (piano-layout 'piano2-1-rh 'piano2-1-lh :name "Piano 2.1" :abbr "Pno 2.1")
+              (piano-layout 'piano2-2-rh 'piano2-2-lh :name "Piano 2.2" :abbr "Pno 2.2")
+              (piano-layout 'piano2-3-rh 'piano2-3-lh :name "Piano 2.3" :abbr "Pno 2.3"))))
+  
+  ;;; Piano I
+  
+  (piano1-1-rh :omn piano1-1-rh :channel 1 :sound 'gm :program 0 :pan 32)  
+  (piano1-1-lh :omn piano1-1-lh :channel 2 :pan 32)
+  
+  (piano1-2-rh :omn piano1-2-rh :channel 3 :pan 32)
+  (piano1-2-lh :omn piano1-2-lh :channel 4 :pan 32)
+  
+  (piano1-3-rh :omn piano1-3-rh :channel 5 :pan 32)
+  (piano1-3-lh :omn piano1-3-lh :channel 6 :pan 32)
+  
+  ;;; Piano II
+  
+  (piano2-1-rh :omn piano2-1-rh :channel 7 :pan 96)
+  (piano2-1-lh :omn piano2-1-lh :channel 8 :pan 96)
+  
+  (piano2-2-rh :omn piano2-2-rh :channel 9 :pan 96)
+  (piano2-2-lh :omn piano2-2-lh :channel 11 :pan 96)
+  
+  (piano2-3-rh :omn piano2-3-rh :channel 12 :pan 96)
+  (piano2-3-lh :omn piano2-3-lh :channel 13 :pan 96)
+  )
+
+(display-musicxml '12-chord-diss-51)
+(display-midi '12-chord-diss-51) 

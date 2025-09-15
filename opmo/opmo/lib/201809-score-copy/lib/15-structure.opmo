@@ -1,0 +1,171 @@
+;;;---------------------------------------------------------
+;;; AB88
+;;; Copyright © 2018 Achim Bornhoeft
+;;;---------------------------------------------------------
+
+(load (merge-pathnames "functions.lisp" *load-truename*))
+(load (merge-pathnames "global.opmo" *load-truename*))
+
+;;;---------------------------------------------------------
+;;; Initialisation
+;;;---------------------------------------------------------
+
+(setf size 8)
+(setf bars (gen-repeat size '(4/4)))
+(setf pause (length-span bars '(-w)))
+
+(setf piano1-1-rh pause piano1-1-lh pause piano1-2-rh pause piano1-2-lh pause 
+      piano1-3-rh pause piano1-3-lh pause piano2-1-rh pause piano2-1-lh pause
+      piano2-2-rh pause piano2-2-lh pause piano2-3-rh pause piano2-3-lh pause)
+
+;;;---------------------------------------------------------
+;;; Parameters
+;;;---------------------------------------------------------
+
+;;; Pitches
+
+;; (pattern-map '((1 0) 2) (gen-binary-euclidean 1 14 8 8)) => (2 1 2 2 2 1 2 2)
+
+(defparameter intervals-left '(-2 -1 -2 -2))
+(defparameter intervals-right '(2 1 2 2))
+
+;; ambitus-hands see. global.opmo
+;; ((105 98) (98 91) (77 70) (70 63) (49 42) (42 35) (91 84) (84 77) (63 56) (56 49) (35 28) (28 21))
+
+(defparameter all-chords
+  (midi-to-pitch
+  (loop for i in ambitus-hands
+    for j from 0
+    if (evenp j)
+    collect (dx-x intervals-right (first (last i)))
+    if (oddp j)
+    collect (dx-x intervals-left (first i)))))
+
+(defun chord-dissolve (chord)
+(let* ((id-len-chord (- (length chord) 1)))
+  (loop for i from 0 to id-len-chord append
+    (chordize (loop for j from i to id-len-chord 
+                collect (nth j chord))))))
+
+;; (chord-dissolve '(c4 d4 e4 f4 g4)) 
+;; (chord-dissolve (first all-chords))
+
+(defparameter all-notes
+  (loop for i in all-chords collect (chord-dissolve i)))
+
+;; (dissolve-omn '(c4 d4 e4 f4 g4) 1)
+
+(defparameter curves '(0.8 0.85 0.9 0.95 1 1.05 1.1 1.15 1.2 1.25 1.3 1.35))
+ 
+(defun quant (num steps)
+"Quantize a number to a defined step value (number or list of numbers)."
+  (labels ((index-no (val lis)
+    "Returns the list index of key in row."
+  (if (not (member val lis))
+    (format t "Value is not in list!")
+    (loop for i in lis
+       for y from 0 do
+       (when (= i val) (return y)))))) 
+  (let* ((stp (if (numberp steps) (list steps) steps))
+	 (round-lis (loop for i in stp collect (* (round (/ num i)) i)))
+	 (diff-lis (loop for i in round-lis collect (abs (- i num))))
+	 (smallest (apply #'min diff-lis)))
+    (nth (index-no smallest diff-lis) round-lis))))
+
+(defun quant-list (lis steps)
+"Quantisation of a list to a defined step value (number or list of numbers."
+  (loop for i in lis collect (quant i steps)))
+
+(defparameter all-durations
+  (length-align
+   (loop for i in curves
+     for j in all-chords collect
+     (quant-list (gen-transition 0.25 5 (length j) i) '(1/4 1/8 1/16)))
+   :type 'r :position 'e))
+
+(defparameter dissolved-voices
+ (make-omn :length all-durations               
+            :pitch all-notes))
+;;;---------------------------------------------------------
+;;; Parts
+;;;---------------------------------------------------------
+
+(setf all-voices
+      (set-assignment 'voice dissolved-voices))
+       
+(setf piano1-1-rh voice0 piano1-2-rh voice2 piano1-3-rh voice4
+      piano2-1-rh voice6 piano2-2-rh voice8 piano2-3-rh voice10)
+
+(setf piano1-1-lh voice1 piano1-2-lh voice3 piano1-3-lh voice5
+      piano2-1-lh voice7 piano2-2-lh voice9 piano2-3-lh voice11)
+
+;;;---------------------------------------------------------
+;;; Score and Layout
+;;;---------------------------------------------------------
+
+(def-score dissolve-rhythm
+           (:title "AB88"
+                   :composer "Achim Bornhoeft"
+                   :copyright "Copyright © 2018"
+                   :key-signature 'chromatic
+                   :time-signature '((1 1 1 1) 4)
+                   :octave-shift nil
+                   :tempo 80
+                   :layout 
+                   (list
+                    (bracket-group
+                     (brace-group 
+                      (treble-layout 'piano1-1-rh) 
+                      (treble-layout 'piano1-1-lh) :name "Piano 1.1" :abbr "Pno 1.1")
+                     (brace-group
+                      (treble-layout 'piano1-2-rh) 
+                      (treble-layout 'piano1-2-lh) :name "Piano 1.2" :abbr "Pno 1.2")
+                     (brace-group
+                      (bass-layout 'piano1-3-rh) 
+                      (bass-layout 'piano1-3-lh) :name "Piano 1.3" :abbr "Pno 1.3"))
+                    (bracket-group
+                     (brace-group
+                      (treble-layout 'piano2-1-rh)
+                      (treble-layout 'piano2-1-lh) :name "Piano 2.1" :abbr "Pno 2.1")
+                     (brace-group
+                      (treble-layout 'piano2-2-rh) 
+                      (bass-layout 'piano2-2-lh) :name "Piano 2.2" :abbr "Pno 2.2")
+                     (brace-group
+                      (bass-layout 'piano2-3-rh)
+                      (bass-layout'piano2-3-lh) :name "Piano 2.3" :abbr "Pno 2.3"))))	
+  
+  ;;; Piano I
+  
+  (piano1-1-rh :omn piano1-1-rh :channel 1 :pan 32
+               :sound 'gm :program 0)
+  (piano1-1-lh :omn piano1-1-lh :channel 2 :pan 32
+               :sound 'gm :program 0)
+  
+  (piano1-2-rh :omn piano1-2-rh :channel 3 :pan 32
+               :sound 'gm :program 0)
+  (piano1-2-lh :omn piano1-2-lh :channel 4 :pan 32
+               :sound 'gm :program 0)
+  
+  (piano1-3-rh :omn piano1-3-rh :channel 5 :pan 32
+               :sound 'gm :program 0)
+  (piano1-3-lh :omn piano1-3-lh :channel 6 :pan 32
+               :sound 'gm :program 0)
+  
+  ;;; Piano II
+  
+  (piano2-1-rh :omn piano2-1-rh :channel 7 :pan 96
+               :sound 'gm :program 0)
+  (piano2-1-lh :omn piano2-1-lh :channel 8 :pan 96
+               :sound 'gm :program 0)
+  
+  (piano2-2-rh :omn piano2-2-rh :channel 9 :pan 96
+               :sound 'gm :program 0)
+  (piano2-2-lh :omn piano2-2-lh :channel 11 :pan 96
+               :sound 'gm :program 0)
+  
+  (piano2-3-rh :omn piano2-3-rh :channel 12 :pan 96
+               :sound 'gm :program 0)
+  (piano2-3-lh :omn piano2-3-lh :channel 13 :pan 96))
+
+(display-musicxml 'dissolve-rhythm)
+(display-midi 'dissolve-rhythm)

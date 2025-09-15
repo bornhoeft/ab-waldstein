@@ -1,0 +1,178 @@
+;;;---------------------------------------------------------
+;;; AB88
+;;; Copyright © 2018 Achim Bornhoeft
+;;;
+;;; 19-cluster-move
+;;;
+;;;
+;;;---------------------------------------------------------
+
+(load (merge-pathnames "functions.lisp" *load-truename*))
+(load (merge-pathnames "global.opmo" *load-truename*))
+
+;;;---------------------------------------------------------
+;;; Initialisation
+;;;---------------------------------------------------------
+
+(setf size 8)
+(setf bars (gen-repeat size '(4/4)))
+(setf pause (length-span bars '(-w)))
+
+(setf piano1-1-rh pause piano1-1-lh pause piano1-2-rh pause piano1-2-lh pause 
+      piano1-3-rh pause piano1-3-lh pause piano2-1-rh pause piano2-1-lh pause
+      piano2-2-rh pause piano2-2-lh pause piano2-3-rh pause piano2-3-lh pause)
+
+;;;---------------------------------------------------------
+;;; Parameters
+;;;---------------------------------------------------------
+
+(defparameter divisor 24)
+
+(defparameter measures 20)
+
+(defparameter intervals '(2 1 2 1 2 1 2 1 2))
+
+(defparameter all-ranges 
+  (loop for i in (reverse all-ambitus)
+    append (gen-divide 5 (dx-x intervals (first i)))))
+
+(defparameter full-range
+  (sort-asc (flatten all-ranges)))
+
+(defparameter envs
+  (loop for i in
+  '((0 19 19 9 19 19 39 29 49 9 9 0 39 9 29 9 9 39 0 19 29) 
+   (9 49 29 49 49 39 49 39 59 19 39 49 59 39 49 39 39 59 29 49 29))
+    collect (list (loop for j from 0 to (- (length i) 1) collect j) i)))
+
+#|
+(list-plot
+ (mcflatten
+ (loop for i in envs
+   collect (cdr i)))
+ :zero-based t
+ :point-radius 2
+ :join-points t)
+|#
+
+(defparameter hilo-envs
+(loop for i in envs
+  collect (mapcar #'round (sample-env i (* divisor measures) :type :y)))) 
+    
+(defparameter all-ids
+  (loop for i in (first hilo-envs)
+      for j in  (second hilo-envs)
+      collect (loop for k from i to j collect k)))
+
+(defparameter all-midis
+(loop for i in all-ids collect
+      (loop for j in i collect (nth j full-range))))
+
+(defparameter voices-midis
+  (loop for i in all-ranges collect
+      (loop for j in all-midis collect
+            (loop for k in j
+                  when (member k i)
+                  collect k))))
+
+(defparameter voices-pitches
+  (loop for i in voices-midis collect
+    (loop for j in i 
+      if (equal j nil)
+      collect 'x
+      else
+      collect (respell (chordize (midi-to-pitch (remove-duplicates j)))))))
+
+(defparameter all-pitches
+  (loop for i in voices-pitches collect
+    (loop for j in i 
+      when (listp j) append j)))
+
+(defparameter all-durations
+  (loop for i in voices-pitches collect
+    (loop for j in i
+      if (listp j)
+      collect (/ 1 divisor)
+      else
+      collect (/ -1 divisor))))
+                
+;;;---------------------------------------------------------
+;;; Parts
+;;;---------------------------------------------------------
+
+(setf all-voices
+      (set-assignment 'voice
+        (make-omn
+         :pitch all-pitches
+         :length all-durations
+         :velocity '(ppp))))
+
+(setf piano1-1-rh voice11 piano1-2-rh voice9 piano1-3-rh voice7
+      piano2-1-rh voice5 piano2-2-rh voice3 piano2-3-rh voice1)
+
+(setf piano1-1-lh voice10 piano1-2-lh voice8 piano1-3-lh voice6
+      piano2-1-lh voice4 piano2-2-lh voice2 piano2-3-lh voice0)
+
+;;;---------------------------------------------------------
+;;; Score and Layout
+;;;---------------------------------------------------------
+
+(def-score 19-cluster-move
+           (:title "AB88"
+                   :composer "Achim Bornhoeft"
+                   :copyright "Copyright © 2018"
+                   :key-signature 'chromatic
+                   :time-signature '((1 1 1 1) 4)
+                   :tempo 80
+                   :layout 
+                   (list
+                    (bracket-group
+                     (brace-group 
+                      (treble-layout 'piano1-1-rh) 
+                      (treble-layout 'piano1-1-lh) :name "Piano 1.1" :abbr "Pno 1.1")
+                     (brace-group
+                      (treble-layout 'piano1-2-rh) 
+                      (treble-layout 'piano1-2-lh) :name "Piano 1.2" :abbr "Pno 1.2")
+                     (brace-group
+                      (bass-layout 'piano1-3-rh) 
+                      (bass-layout 'piano1-3-lh) :name "Piano 1.3" :abbr "Pno 1.3"))
+                    (bracket-group
+                     (brace-group
+                      (treble-layout 'piano2-1-rh)
+                      (treble-layout 'piano2-1-lh) :name "Piano 2.1" :abbr "Pno 2.1")
+                     (brace-group
+                      (treble-layout 'piano2-2-rh) 
+                      (bass-layout 'piano2-2-lh) :name "Piano 2.2" :abbr "Pno 2.2")
+                     (brace-group
+                      (bass-layout 'piano2-3-rh)
+                      (bass-layout'piano2-3-lh) :name "Piano 2.3" :abbr "Pno 2.3"))))	
+  
+  ;;; Piano I
+  
+  (piano1-1-rh :omn piano1-1-rh :channel 1 :pan 32)  
+  (piano1-1-lh :omn piano1-1-lh :channel 2 :pan 32)
+  
+  (piano1-2-rh :omn piano1-2-rh :channel 3 :pan 32)
+  (piano1-2-lh :omn piano1-2-lh :channel 4 :pan 32)
+  
+  (piano1-3-rh :omn piano1-3-rh :channel 5 :pan 32)
+  (piano1-3-lh :omn piano1-3-lh :channel 6 :pan 32)
+  
+  ;;; Piano II
+  
+  (piano2-1-rh :omn piano2-1-rh :channel 7 :pan 96)
+  (piano2-1-lh :omn piano2-1-lh :channel 8 :pan 96)
+  
+  (piano2-2-rh :omn piano2-2-rh :channel 9 :pan 96)
+  (piano2-2-lh :omn piano2-2-lh :channel 11 :pan 96)
+  
+  (piano2-3-rh :omn piano2-3-rh :channel 12 :pan 96)
+  (piano2-3-lh :omn piano2-3-lh :channel 13 :pan 96))
+
+(display-musicxml '19-cluster-move)
+(display-midi '19-cluster-move)
+
+#|
+(with-open-file (file "~/Desktop/19-cluster-move.xml" :direction :output :if-exists :supersede)
+  (score-to-musicxml (get-score '19-cluster-move) file))
+|#

@@ -1,0 +1,190 @@
+;;;---------------------------------------------------------
+;;; AB88 - Waldstein
+;;; Copyright © 2018 Achim Bornhoeft
+;;;
+;;; Structure 4
+;;;
+;;;  Trill to scale (4 voices)
+;;;---------------------------------------------------------
+
+(load (merge-pathnames "functions.lisp" *load-truename*))
+(load (merge-pathnames "global.opmo" *load-truename*))
+
+;;;---------------------------------------------------------
+;;; Initialisation
+;;;---------------------------------------------------------
+
+(setf size 8)
+(setf bars (gen-repeat size '(4/4)))
+(setf pause (length-span bars '(-w)))
+
+(setf piano1-1-rh pause piano1-1-lh pause piano1-2-rh pause piano1-2-lh pause 
+      piano1-3-rh pause piano1-3-lh pause piano2-1-rh pause piano2-1-lh pause
+      piano2-2-rh pause piano2-2-lh pause piano2-3-rh pause piano2-3-lh pause)
+
+;;;---------------------------------------------------------
+;;; Parameters
+;;;---------------------------------------------------------
+
+#|
+;; loaded from global.opmo
+(defparameter all-pitches
+  (list pitches-piano1-1 pitches-piano1-2 pitches-piano1-3
+        pitches-piano2-1 pitches-piano2-2 pitches-piano2-3))
+|# 
+
+(defparameter sel-pitches (list pitches-piano1-2 pitches-piano1-3
+                                pitches-piano2-2 pitches-piano2-3))
+(defparameter scales
+  (assign-variable 'scale
+                   (loop for i in sel-pitches collect
+                     (integer-transpose 7 (dx-x '(2 1 2 1 2 1 2 1 2) (first i))))))
+
+(defparameter no-notes 30)
+
+(defun round-even (val)
+  (let ((rv (round val))
+        (dec (nth-value 1 (floor val))))
+    (if (and (oddp rv) (< rv val))
+      (+ val (- 1 dec))
+      (if (and (oddp rv) (> rv val))
+      (- val dec)
+        (if (oddp rv)
+          (* 1.0 (+ val 1))
+          rv)))))
+
+(defparameter tremolos 
+  (assign-variable 'tremolo
+                   (list
+                   (mapcar #'round-even (gen-transition 16 2 no-notes 0.6))
+                   (mapcar #'round-even (gen-transition 13 2 no-notes 0.45))
+                   (mapcar #'round-even (gen-transition 12 2 no-notes 0.7))
+                   (mapcar #'round-even (gen-transition 10 2 no-notes 0.4)))))
+
+(defparameter rand-ranges-high
+  (assign-variable 'rand-range-high
+                   (list
+                    (gen-transition 0 9 no-notes 0.7 :rounded t)
+                    (gen-transition 0 9 no-notes 1.1 :rounded t)
+                    (gen-transition 0 9 no-notes 0.9 :rounded t)
+                    (gen-transition 0 9 no-notes 1.3 :rounded t))))
+
+(defparameter rand-ranges-low
+  (assign-variable 'rand-range-low
+                   (list
+                    (gen-transition 0 8 no-notes 0.7 :rounded t)
+                    (gen-transition 0 8 no-notes 1.1 :rounded t)
+                    (gen-transition 0 8 no-notes 0.9 :rounded t)
+                    (gen-transition 0 8 no-notes 1.3 :rounded t))))
+
+(defun trem-to-scale (scale tremolos rand-range-low rand-range-high )
+  (loop for i in tremolos
+    for j in rand-range-low
+    for k in rand-range-high
+    initially (rnd-seed 12)
+    append (loop for k from 0 to (- i 1) collect (nth (mod k 2) scale))
+    append (loop for m from 0 to (rnd1 :low j :high k :seed (seed)) 
+             collect (nth (+ 2 m) scale))))
+
+#|
+(defparameter pitches
+      (assign-variable 'pitches
+                       (list  (midi-to-pitch (trem-to-scale scale0 tremolo0 rand-range0))
+                         (midi-to-pitch (trem-to-scale scale1 tremolo1 rand-range1))
+                        (replace-map '((gs3 ab3)) (midi-to-pitch (trem-to-scale scale2 tremolo2 rand-range2)))
+                        (midi-to-pitch (trem-to-scale scale3 tremolo3 rand-range3)))))
+|#
+(defparameter pitches
+      (assign-variable 'pitch
+                       (loop for i in scales
+                         for j in tremolos
+                         for k in rand-ranges-low
+                         for l in rand-ranges-high
+                         collect (midi-to-pitch (trem-to-scale (eval i) 
+                                                               (eval j)
+                                                               (eval k)
+                                                               (eval l))))))
+                      
+(defparameter rhythms '(1/32 1/24 1/28 1/20))
+
+(defparameter durations
+                   (loop for i in pitches
+                     for k in rhythms
+                     collect (loop repeat (length (eval i)) collect k)))
+
+(defparameter aligned-durations
+  (assign-variable 'duration
+                   (loop for i in durations 
+                     collect (length-adjust 10/1 i :type 'r :position 'e :omn t))))
+                   
+(setf piano1-2-rh (make-omn :pitch (replace-map '((eb5 ds5)) pitch0) 
+                            :length duration0 
+                            :velocity '(pp))
+      piano1-3-rh (make-omn :pitch pitch1 
+                            :length duration1 
+                            :velocity '(mp))
+      piano2-2-rh (make-omn :pitch (replace-map ' ((bb3 as3)) pitch2) 
+                            :length duration2 
+                            :velocity '(p))
+      piano2-3-rh (make-omn :pitch pitch3 
+                            :length duration3 
+                            :velocity '(mf)))
+
+;;;---------------------------------------------------------
+;;; Score and Layout
+;;;---------------------------------------------------------
+
+(def-score trem-to-scales
+           (:title "AB88"
+                   :composer "Achim Bornhoeft"
+                   :copyright "Copyright © 2018"
+                   :key-signature 'chromatic
+                   :time-signature '((1 1 1 1) 4)
+                   :tempo 80
+                   :layout 
+                   (list
+                    (bracket-group
+                     (brace-group 
+                      (treble-layout 'piano1-1-rh) 
+                      (treble-layout 'piano1-1-lh) :name "Piano 1.1" :abbr "Pno 1.1")
+                     (brace-group
+                      (treble-layout 'piano1-2-rh) 
+                      (treble-layout 'piano1-2-lh) :name "Piano 1.2" :abbr "Pno 1.2")
+                     (brace-group
+                      (bass-layout 'piano1-3-rh) 
+                      (bass-layout 'piano1-3-lh) :name "Piano 1.3" :abbr "Pno 1.3"))
+                    (bracket-group
+                     (brace-group
+                      (treble-layout 'piano2-1-rh)
+                      (treble-layout 'piano2-1-lh) :name "Piano 2.1" :abbr "Pno 2.1")
+                     (brace-group
+                      (treble-layout 'piano2-2-rh) 
+                      (bass-layout 'piano2-2-lh) :name "Piano 2.2" :abbr "Pno 2.2")
+                     (brace-group
+                      (bass-layout 'piano2-3-rh)
+                      (bass-layout'piano2-3-lh) :name "Piano 2.3" :abbr "Pno 2.3"))))	
+  
+  ;;; Piano I
+  
+  (piano1-1-rh :omn piano1-1-rh :channel 1 :pan 32)  
+  (piano1-1-lh :omn piano1-1-lh :channel 2 :pan 32)
+  
+  (piano1-2-rh :omn piano1-2-rh :channel 3 :pan 32)
+  (piano1-2-lh :omn piano1-2-lh :channel 4 :pan 32)
+  
+  (piano1-3-rh :omn piano1-3-rh :channel 5 :pan 32)
+  (piano1-3-lh :omn piano1-3-lh :channel 6 :pan 32)
+  
+  ;;; Piano II
+  
+  (piano2-1-rh :omn piano2-1-rh :channel 7 :pan 96)
+  (piano2-1-lh :omn piano2-1-lh :channel 8 :pan 96)
+  
+  (piano2-2-rh :omn piano2-2-rh :channel 9 :pan 96)
+  (piano2-2-lh :omn piano2-2-lh :channel 11 :pan 96)
+  
+  (piano2-3-rh :omn piano2-3-rh :channel 12 :pan 96)
+  (piano2-3-lh :omn piano2-3-lh :channel 13 :pan 96))
+
+(display-musicxml 'trem-to-scales)
+(display-midi 'trem-to-scales)

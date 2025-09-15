@@ -1,0 +1,235 @@
+;;;---------------------------------------------------------
+;;; AB88 - Waldstein
+;;; Copyright © 2018 Achim Bornhoeft
+;;;
+;;; 01-chord-devel
+;;;
+;;; Long development (105 measures = 420 Quarters) of chords from 
+;;; single pitches to 5 note chords over the whole range of the keyboard
+;;;---------------------------------------------------------
+
+(load (merge-pathnames "functions.lisp" *load-truename*))
+(load (merge-pathnames "global.opmo" *load-truename*))
+
+;;;---------------------------------------------------------
+;;; Initialisation
+;;;---------------------------------------------------------
+
+(setf size 8) 
+(setf bars (gen-repeat size '(4/4)))
+(setf pause (length-span bars '(-w)))
+
+(setf piano1-1-rh pause piano1-1-lh pause piano1-2-rh pause piano1-2-lh pause 
+      piano1-3-rh pause piano1-3-lh pause piano2-1-rh pause piano2-1-lh pause
+      piano2-2-rh pause piano2-2-lh pause piano2-3-rh pause piano2-3-lh pause)
+
+;;;---------------------------------------------------------
+;;; Parameters
+;;;---------------------------------------------------------
+
+;;; Pitches
+
+;; (pattern-map '((1 0) 2) (gen-binary-euclidean 1 14 8 8)) => (2 1 2 2 2 1 2 2)
+(defparameter intervals-left '(-2 -1 -2 -2))
+(defparameter intervals-right '(2 1 2 2))
+
+;;; pitches for the right hands
+;;; start chord (1 note) and end chord (5 notes) for all right hands
+
+;; ambitus-hands: ((105 98) (98 91) (77 70) (70 63) (49 42) (42 35) (91 84) (84 77) (63 56) (56 49) (35 28) (28 21))
+
+(defparameter start-end-chord-rh 
+  (loop for i in ambitus-hands
+    for j from 0
+    for li = (first (last i))
+    for end-chord = (dx-x intervals-right li)
+    if (evenp j)
+    collect (list (gen-repeat (length end-chord) li) end-chord)))
+
+;;; number of chords in transition
+
+(defparameter no-notes-rh '(41 37 33 31 35 39))
+
+;;; chord transition for all right hands
+
+(setf chords-rh
+(loop for i in start-end-chord-rh
+  for j in no-notes-rh
+  for st = (first i)
+  for nd = (second i)
+  collect (respell 
+           (chord-pitch-unique 
+            (chordize-list
+             (midi-to-pitch
+              (remove-duplicates 
+              ;;; different curve values
+              (gen-transition st nd j 1 :chords t :rounded t))))))))
+
+;; (length (first chords-rh))
+
+;;; pitches for the left hands
+;;; start chord (1 note) and end chord (5 notes) for all left hands
+
+(defparameter start-end-chord-lh
+  (loop for i in ambitus-hands
+    for j from 0
+    for li = (first i)
+    for end-chord = (dx-x intervals-left li)
+    if (oddp j)
+    collect (list (gen-repeat (length end-chord) li) end-chord)))
+
+;;; number of chords in transition
+
+(defparameter no-notes-lh '(40 36 32 30 34 38))
+
+;;; chord transition for all left hands
+
+(setf chords-lh
+(loop for i in start-end-chord-lh
+  for j in no-notes-lh
+  for st = (first i)
+  for nd = (second i)
+  collect (respell 
+           (chord-pitch-unique 
+            (chordize-list
+             (midi-to-pitch
+              (remove-duplicates
+              ;;; different curve values
+             (gen-transition st nd j 1 :chords t :rounded t))))))))
+
+(setf all-chords
+      (append chords-rh chords-lh))
+
+;;; durations for all right hands
+
+(defun durations (trans notedur)
+  (loop for i in trans
+    for quantres = (quant (* -1 (- i notedur)) (list notedur))
+    collect notedur into reslis
+    when (not (zerop quantres))
+    collect quantres into reslis
+    end
+    finally (return (append reslis (list notedur)))))
+
+(defparameter transitions-rh
+                  (list
+                   (gen-transition 1/4 20/4 40 1)
+                   (gen-transition 1/4 20/4 36 1.2)
+                   (gen-transition 1/4 20/4 32 0.9)
+                   (gen-transition 1/4 20/4 30 1.3)
+                   (gen-transition 1/4 20/4 34 1.1)
+                   (gen-transition 1/4 20/4 38 1.1)))
+
+(defparameter durations-rh
+  (loop for i in transitions-rh collect (durations i 1/16)))
+
+;; (length (first durations-rh))
+
+;;; durations for all left hands
+
+(defparameter transitions-lh
+                  (list
+                   (gen-transition 1/4 20/4 39 1.1)
+                   (gen-transition 1/4 20/4 35 1.1)
+                   (gen-transition 1/4 20/4 31 1.3)
+                   (gen-transition 1/4 20/4 29 0.9)
+                   (gen-transition 1/4 20/4 33 1.2)
+                   (gen-transition 1/4 20/4 37 1)))
+
+(defparameter durations-lh
+  (loop for i in transitions-lh collect (durations i 1/16)))
+
+(defparameter all-durations
+  (length-align
+  (append durations-rh durations-lh)
+  :type 'r :position 'e))
+
+(defparameter all-velocities
+  (loop for i in all-chords collect
+      (get-velocity (gen-transition 0.3 0.6 (length i) 1) :type :symbol)))
+
+;;;---------------------------------------------------------
+;;; Parts
+;;;---------------------------------------------------------
+
+(setf all-voices
+      (set-assignment 'voice
+       (gen-retrograde
+        ;;; reversing the length 
+        ;; For all processes to end at the same time, the durations 
+        ;; must be calculated from end to start and then reversed
+        (make-omn
+         :pitch all-chords
+         :length all-durations
+         :velocity all-velocities)
+        :type :length)))
+
+(setf piano1-1-rh voice0 piano1-2-rh voice1 piano1-3-rh voice2
+      piano2-1-rh voice3 piano2-2-rh voice4 piano2-3-rh voice5)
+
+(setf piano1-1-lh voice6 piano1-2-lh voice7 piano1-3-lh voice8
+      piano2-1-lh voice9 piano2-2-lh voice10 piano2-3-lh voice11)
+
+;;;---------------------------------------------------------
+;;; Score and Layout
+;;;---------------------------------------------------------
+
+(def-score 01-chord-devel
+           (:title "AB88"
+                   :composer "Achim Bornhoeft"
+                   :copyright "Copyright © 2018"
+                   :key-signature 'chromatic
+                   :time-signature '((1 1 1 1) 4)
+                   :tempo 80
+                   :layout 
+                   (list
+                    (bracket-group
+                     (brace-group 
+                      (treble-layout 'piano1-1-rh) 
+                      (treble-layout 'piano1-1-lh) :name "Piano 1.1" :abbr "Pno 1.1")
+                     (brace-group
+                      (treble-layout 'piano1-2-rh) 
+                      (treble-layout 'piano1-2-lh) :name "Piano 1.2" :abbr "Pno 1.2")
+                     (brace-group
+                      (bass-layout 'piano1-3-rh) 
+                      (bass-layout 'piano1-3-lh) :name "Piano 1.3" :abbr "Pno 1.3"))
+                    (bracket-group
+                     (brace-group
+                      (treble-layout 'piano2-1-rh)
+                      (treble-layout 'piano2-1-lh) :name "Piano 2.1" :abbr "Pno 2.1")
+                     (brace-group
+                      (treble-layout 'piano2-2-rh) 
+                      (bass-layout 'piano2-2-lh) :name "Piano 2.2" :abbr "Pno 2.2")
+                     (brace-group
+                      (bass-layout 'piano2-3-rh)
+                      (bass-layout'piano2-3-lh) :name "Piano 2.3" :abbr "Pno 2.3"))))	
+  
+  ;;; Piano I
+  
+  (piano1-1-rh :omn piano1-1-rh :channel 1 :pan 32)  
+  (piano1-1-lh :omn piano1-1-lh :channel 2 :pan 32)
+  
+  (piano1-2-rh :omn piano1-2-rh :channel 3 :pan 32)
+  (piano1-2-lh :omn piano1-2-lh :channel 4 :pan 32)
+  
+  (piano1-3-rh :omn piano1-3-rh :channel 5 :pan 32)
+  (piano1-3-lh :omn piano1-3-lh :channel 6 :pan 32)
+  
+  ;;; Piano II
+  
+  (piano2-1-rh :omn piano2-1-rh :channel 7 :pan 96)
+  (piano2-1-lh :omn piano2-1-lh :channel 8 :pan 96)
+  
+  (piano2-2-rh :omn piano2-2-rh :channel 9 :pan 96)
+  (piano2-2-lh :omn piano2-2-lh :channel 11 :pan 96)
+  
+  (piano2-3-rh :omn piano2-3-rh :channel 12 :pan 96)
+  (piano2-3-lh :omn piano2-3-lh :channel 13 :pan 96))
+
+(display-musicxml '01-chord-devel)
+(display-midi '01-chord-devel)
+
+#|
+(with-open-file (file "~/Documents/projekte/03-kammermusik5-7/Waldstein/sco/xml/01-chord-devel" :direction :output :if-exists :supersede)
+  (score-to-musicxml (get-score '01-chord-devel) file))
+|#

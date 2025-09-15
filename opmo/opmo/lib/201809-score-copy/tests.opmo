@@ -1,0 +1,437 @@
+;;;---------------------------------------------------------
+;;; AB88
+;;; Copyright © 2018 Achim Bornhoeft
+;;;
+;;; Testing code
+;;;---------------------------------------------------------
+
+(load (merge-pathnames "functions.lisp" *load-truename*))
+(load (merge-pathnames "global.opmo" *load-truename*))
+
+;;;---------------------------------------------------------
+
+;;; gen-accumulate
+
+(cons 0 (gen-accumulate '(3 2 3) :start 0 :count 4))
+
+(gen-accumulate '(2 3 4) :decf t)
+(gen-accumulate '(2 3 4) :start 2) ;; ???
+(gen-accumulate '(2 3 4) :count 8)
+(gen-accumulate '(2 3 4) :start 2 :count 8 :decf t)
+(gen-accumulate (rnd 10 :low -1.0 :high 1.0))
+(gen-accumulate (rnd 10 :low -1.0 :high 1.0) :decf t)
+(gen-accumulate (rnd 10 :low -1.0 :high 1.0 :seed 985))
+
+;;; arpeggio notation 
+
+(defparameter chord '(c4 d4 ds4 f4 gs4))
+(append (list (append '(acc s) (rnd-unique 3 chord :seed 123))) (cons 'h (chordize chord)))
+
+(loop for i from 1 to 5 collect
+(append (list (append '(acc s) (rnd-unique i chord :seed 123))) (cons 'w (chordize chord))))
+
+(loop for i from 1 to 5 
+ initially (rnd-seed 123) collect
+(append (list (append '(acc s) (rnd-unique i chord :seed (seed)))) (cons 'w (chordize chord))))
+
+;;; chord with random dissolve (3 notes)
+(append (append (chordize chord) '(tie)) (chordize (rnd-unique 3 chord)))
+
+;;; chord with random dissolve (4 to 1 notes)
+(loop for i from 4 downto 1
+  collect (append 
+           (append (chordize chord) '(tie)) (chordize (rnd-unique i chord))))
+
+;;; chord with random dissolve (4 to 1 notes) with seed
+(loop for i from 4 downto 1
+  initially (rnd-seed 12)
+  collect (append 
+           (append (chordize chord) '(tie)) 
+           (chordize (rnd-unique i chord :seed (seed)))))
+
+;;; chord with random dissolve (4 to 1 notes) with seed and different lenghts
+(loop for i from 4 downto 1
+  initially (rnd-seed 12)
+  collect (append 
+           (append (cons (rnd-pick '(h h. w) :seed (seed)) (chordize chord)) 
+                   '(tie)) 
+           (cons (rnd-pick '(h h. w) :seed (seed)) 
+                 (chordize (rnd-unique i chord :seed (seed))))))
+
+;;; chord with random dissolve (4 to 1 notes) with seed and always 6/4 length
+(loop for i from 4 downto 1
+  initially (rnd-seed 345)
+  for first-len = (rnd-pick '(1/4 1 3/4 1/2) :seed (seed))
+  for last-len = (- 6/4 first-len)
+  collect (append 
+           (append (cons first-len (chordize chord)) 
+                   '(tie)) 
+           (cons last-len (chordize (rnd-unique i chord :seed (seed))))))
+
+;;; function for dissolve chord successively
+(defun chord-dissolve (chord)
+(let* ((id-len-chord (- (length chord) 1)))
+  (loop for i from 0 to id-len-chord append
+    (chordize (loop for j from i to id-len-chord 
+                collect (nth j chord))) into reslis
+    collect 'tie into reslis
+    finally (return (butlast reslis)))))
+
+;; (chord-dissolve '(c4 d4 e4 f4 g4)) 
+;; => (c4d4e4f4g4 tie d4e4f4g4 tie e4f4g4 tie f4g4 tie g4)
+
+;;; function for random dissolve chord successively
+(defun chord-rnd-dissolve (chord)
+(let* ((id-len-chord (- (length chord) 1))
+       (chrd (rnd-order chord)))
+  (loop for i from 0 to id-len-chord append
+    (chordize (loop for j from i to id-len-chord 
+                collect (nth j chrd))) into reslis
+    collect 'tie into reslis
+    finally (return (butlast reslis)))))
+
+;; (chord-rnd-dissolve '(c4 d4 e4 f4 g4))
+
+;;; dissolve chord successively with different lengths
+(defparameter chord '(c4 d4 e4 f4 g4))
+(make-omn :length '(s e e. q q.)
+          :pitch (chord-dissolve chord)
+          :articulation (gen-repeat (- (length chord) 1) 'tie))
+
+(loop repeat 6
+ initially (rnd-seed 12)
+  collect (butlast (make-omn :length (a/x 16 
+                       (rnd-sum-to-size 
+                        16 (length chord) '(1 2 3 4 5 6 7 8) :seed (seed)))
+          :pitch (chord-dissolve chord)
+          :articulation (gen-repeat (- (length chord) 1) 'tie))))
+
+;;; chord transition
+
+(defun list-trans (lst1 lst2 seed)
+  (let* ((nth-len (- (length lst1) 1))
+         (trans-map (rnd-order 
+                     (loop for i from 0 to nth-len collect i) 
+                     :seed seed)))
+                   (loop for i in trans-map
+                     with lis = lst1
+                     for posrep = (position-replace i (nth i lst2) lis)                   
+                     collect posrep into reslis
+                     do (setf lis posrep)
+                     finally (return (append (list lst1) reslis)))))
+
+;; (list-trans '(2 1 2 1 2 1 2 1 2) '(1 2 2 2 2 2 2 2 2) 9)
+;; =>((2 1 2 1 2 1 2 1 2) (2 1 2 1 2 1 2 2 2) (2 1 2 1 2 1 2 2 2) (2 1 2 2 2 1 2 2 2) (2 1 2 2 2 1 2 2 2) (2 2 2 2 2 1 2 2 2) (1 2 2 2 2 1 2 2 2) (1 2 2 2 2 1 2 2 2) (1 2 2 2 2 2 2 2 2) (1 2 2 2 2 2 2 2 2))
+
+;;; OPMO
+(gen-morph 10 '(2 1 2 1 2 1 2 1 2) '(1 2 2 2 2 2 2 2 2) :seed 23)
+
+;;; random chord with fixed lower note
+
+(flatten
+ (respell 
+  (chordize 
+   (midi-to-pitch 
+    (dx-x 
+     (rnd-sample  10 '((2 1 2 1 2)
+                       (1 2 1 2 2)
+                       (2 1 2 2 1)
+                       (1 2 2 1 2)
+                       (2 2 1 2 1)
+                       (2 2 2 2 1)
+                       (2 2 2 1 2)
+                       (2 2 1 2 2)
+                       (2 1 2 2 2)
+                        (1 2 2 2 2)
+                       (2 2 2 2 2)) 
+                  :norep t :seed 234) 60)))))
+
+;;; split durations (for flageolet field from AB72)
+
+(loop for i in
+'(1/16 -3/8 3/4)
+  for j = (abs (/ i 1/16))
+  append (loop repeat j collect (/ i j)))
+
+;;; Pick intervals
+;;; NOT WORKING (melody is going downwards)
+
+(defun pick-intervals (reps start-pitch intervals seed)
+  (interval-to-pitch 
+   (rnd-sample reps intervals :norep t :seed seed) :start start-pitch))
+;; (cons 'e (pick-intervals 50 'c6 '(1 -1 2 -2 11 -11 13 -13 7 -7) 123))
+
+;;; pitch repetitions
+
+(defun rep-pitches (total reps values &key (norep))
+  (let* ((rep (if (numberp reps) (list reps) reps))
+         (lr (length rep))
+         (vls (if (numberp values) (list values) values))
+         (lv (length vls)))
+    (loop for i from 1 to total
+      with j = 0
+      with k = (nth (random lr) rep)
+      with m =  (nth (random lv) vls)
+      collect m
+      do (incf j)
+      (when (= j k)
+        (setf j 0
+              k (nth (random lr) rep)
+              m (if norep
+                  (loop for i = (nth (random lv) vls)
+                    until (not (equal m i))
+                    finally (return i))
+                  (nth (random lv) vls)))))))  
+       
+;; (rep-pitches  24 '(2 3 4) (midi-to-pitch '(60 53 87)) :norep t)
+;; => (t c4 c4 eb6 eb6 c4 c4 c4 c4 c4 c4 eb6 eb6 eb6 eb6 eb6 eb6 eb6 eb6 eb6 eb6)
+;; (cons 't (rep-pitches  20 '(2 3 4) (midi-to-pitch '(60 53 87)) :norep t))
+;; => (t c4 c4 c4 f3 f3 c4 c4 c4 c4 eb6 eb6 c4 c4 f3 f3 c4 c4 c4 c4 eb6)
+;; (loop repeat 10 collect (gen-repeat (rnd-pick '(2 3 4)) (rnd-pick '(60 53 87))))
+
+;;; Janusz's solutions
+
+(setf size (rnd-sum 24 '(2 3 4)))
+(setf pitch (rnd-sample (length size) '(60 53 87) :norep t))
+(setf res (gen-repeat size pitch))
+
+(defun rep-pitches (total reps values &key norep seed)
+  (let* ((size (rnd-sum total reps :seed seed))
+         (pitch (rnd-sample (length size) values :norep norep :seed seed)))
+    (gen-repeat size pitch)))
+
+;; (cons 't (flatten (rep-pitches  20 '(2 3 4) (midi-to-pitch '(60 53 87)) :norep t :seed 123))) 
+      
+;;; Compares a list of numbers with a number and return randomly a different one.
+         
+(defun norep (value elt-lis)
+  "Compares a list of numbers with a number and return randomly a different one."
+  (loop for i = (nth (random (length elt-lis)) elt-lis)
+    until (not (= value i))
+    finally (return i)))
+;; (norep 4 '(4 4 6 5 7)) => 7
+
+;;; select randomly from list with and without repetition
+
+(defun rnd-sel (reps rnd-lis &key (norep nil))
+  ""
+  (loop for x from 1 to reps
+    with las = NIL
+    for res = (if norep
+                (loop 
+                  for i = (nth (random (length rnd-lis)) rnd-lis)
+                  until (not (equal las i))
+                  finally (return i))
+                (nth (random (length rnd-lis)) rnd-lis))
+    collect res
+    do (setf las res)))
+;; (rnd-sel 10 '(1 2 3 4 5)) => (4 3 2 4 4 2 2 1 1 2)
+;; (rnd-sel 15 '(1 2 3 4 5) :norep t) => (1 4 2 5 2 1 2 1 5 2 3 1 5 4 3)
+
+;;; Permutation
+
+(defun list-permute (start lis)
+(loop repeat (length lis)
+               for i from start
+               collect (nth (mod i (length lis)) lis)))
+;; (list-permute 1 '(1 2 3 4 5)) = (2 3 4 5 1)
+
+;;; OPMO
+;; (gen-rotate -1 '(1 2 3 4 5)) => (2 3 4 5 1)
+
+;;; ambitus scale
+;; (sort-asc (flatten (ambitus-scale '(e3 e4) '(e3 e4) '((c6 d6 e6 g6 gs6 a6)))))
+
+;;; chords based on euclidean structure '(2 1 2 2 2 1 2 2) over 6 octaves
+(defparameter chords1 
+  (let ((scales (dx-x (gen-rotate :right '(2 1 2 2 2 1 2 2)  :type :seq) 55))
+        (octaves (gen-eval 8 '(rnd-sample 9 '(-36 -24 -12 0 12 24 36) :norep t) :seed 11)))
+  (chordize
+   (midi-to-pitch 
+    (loop for i in scales
+      for j in octaves collect
+      (sort-asc (loop for k in i
+                  for m in j
+                  collect (+ k m))))))))
+
+;;; chords based on euclidean structure '(4 3 4 3) over 6 octaves
+
+(defparameter chords2
+  (loop for i from 123 to 130 
+    for scales = (dx-x (gen-rotate :right '(4 3 4 3)  :type :seq) 56)
+    for octaves = (gen-eval 4 '(rnd-sample 9 '(-36 -24 -12 0 12 24 36) :norep t) :seed i)
+  collect
+  (chordize
+   (midi-to-pitch 
+    (loop for i in scales
+      for j in octaves collect
+      (sort-asc (loop for k in i
+                  for m in j
+                  collect (+ k m))))))))
+
+;;; chords based on euclidean structure '(5 5 4) over 6 octaves
+
+(defmacro sort-lis (lists &key (sort-id 'first))
+  `(sort (copy-seq ,lists) #'< :key #',sort-id))
+
+(defparameter start-pitches 
+  (sort 
+   (cddr 
+    (butlast (loop for i in (sort-lis all-ambitus) collect (first i)))) #'<))
+
+#|
+(defparameter chords3
+  (chordize 
+   (midi-to-pitch 
+    (mcflatten 
+     (gen-eval 12
+       '(loop for i in start-pitches
+         initially (init-seed 567)
+         collect
+         (dx-x (rnd-sample 3 '(5 5 4) :norep t :seed (seed)) i)) :seed 12)))))
+
+(defparameter chords3
+  (chordize 
+   (midi-to-pitch 
+    (mcflatten 
+     (matrix-transpose
+      (loop for i in start-pitches
+        for j from 0 to (- (length start-pitches) 1)
+        collect
+        (loop for k from 0 to 2
+          collect (dx-x (gen-rotate k (gen-rotate j '(5 5 4))) i))))))))
+|# 
+
+(defparameter chords3
+  (let ((lisrot (gen-rotate :right '(5 5 4) :type :seq)))
+  (chordize 
+   (midi-to-pitch 
+    (mcflatten
+     (matrix-transpose
+       (loop for i in start-pitches
+         initially (init-seed 567)
+         collect
+         (dx-x 
+          (rnd-sample 12 lisrot :norep t :seed (seed)) i))))))))
+
+;;; fill a list successively from one low to all high
+
+(defun fill-lst (low high)
+  (let* ((fillis (loop for i from low to high collect
+                   (loop for j from low to i collect j)))
+         (reslis1 (loop for i in fillis
+                    for j = (length i)
+                    for k = (- (length fillis) j)
+                    collect (append (loop repeat k collect 0) i)))
+         (last-in-lis (first (last reslis1)))
+         (reslis2 (loop repeat (- (length last-in-lis) 1)
+                    for j from 1
+                    collect (loop for i in last-in-lis 
+                              collect (min high (+ j i))))))
+    (append reslis1 reslis2)))
+
+;; (fill-lst 1 5)
+;; => ((0 0 0 0 1) (0 0 0 1 2) (0 0 1 2 3) (0 1 2 3 4) (1 2 3 4 5) (2 3 4 5 5) (3 4 5 5 5) (4 5 5 5 5) (5 5 5 5 5))
+
+;;; Pick intervals
+;;; NOT WORKING (melody is going downwards)
+
+(defun pick-intervals (reps start-pitch intervals seed)
+  (interval-to-pitch
+   (rnd-sample reps intervals :norep t :seed seed) :start start-pitch))
+;; (cons 'e (pick-intervals 50 'c6 '(1 -1 2 -2 11 -11 13 -13 7 -7) 123))
+
+(cons 's 
+      (ambitus '(b4 c6)
+               (interval-to-pitch
+                (rnd-sample 48 '(1 -1 2 -2 11 11 -11 -11 13 13 -13 -13 7 -7) 
+                            :norep t :seed 3))))
+
+(make-omn
+ :pitch (midi-to-pitch 
+         (rnd-sample 24 
+              (flatten 
+               (list pitches-piano1-2 pitches-piano2-2)) 
+              :norep t :seed 234))
+ :length '(e)
+ :span :pitch)
+
+;;; no-norep
+;;; norep for more than the last number
+;;; SKETCH
+
+(defparameter lis '(1 2 3 4 5 6 7 8 9 10 11 12))
+(defparameter first-lis (rnd-unique 6 lis :seed 123))
+
+(rnd-unique '(5 1) (list (cdr first-lis) 
+                         (loop for i in lis 
+                           if 
+                           (not (member i (cdr first-lis))) 
+                           collect i))) 
+
+;;; return the middle number of a list depending on if the
+;;; list is odd or even
+
+(defun half-list (lis &key (type))
+  (let* ((lenlis (length lis))
+         (listest (oddp lenlis))
+         (half (round (* 0.5 lenlis)))
+         (half-elt-right (nth half lis))
+         (half-elt-left (nth (- half 1) lis)))
+    (if listest
+      half-elt-right
+      (case type
+        (left half-elt-left)
+        (right half-elt-right)
+        (otherwise (list half-elt-left half-elt-right))))))
+
+;; (half-list '(3 5 4 6 8))
+;; (half-list '(3 5 4 6 8 1))
+;; (half-list '(3 5 4 6 8 1) :type 'left)
+;; (half-list '(3 5 4 6 8 1) :type 'right)
+;; (half-list '(3 5 4 6 8) :type 'right)
+
+;;; tendency process
+
+(init-seed 2)
+
+(setf lis (list 1 2 3 4 5 6 7 8 9))
+
+(defparameter no-samples 80)
+
+(defparameter left-half (gen-transition 0 (half-list lis) no-samples 1 :rounded t))
+(defparameter right-half (gen-transition (- (length lis) 1) (half-list lis) no-samples 1 :rounded t))
+
+(defparameter ran-numbers
+  (loop for i in left-half
+    for j in right-half append
+    (rnd-number 1 i j)))
+
+(list-plot
+ (list left-half right-half ran-numbers)
+ :point-radius 2
+ :join-points t)
+
+;;; quantized process
+
+(defun quant (num steps)
+"Quantize a number to a defined step value (number or list of numbers)."
+  (labels ((index-no (val lis)
+    "Returns the list index of key in row."
+  (if (not (member val lis))
+    (format t "Value is not in list!")
+    (loop for i in lis
+       for y from 0 do
+       (when (= i val) (return y))))))
+  (let* ((stp (if (numberp steps) (list steps) steps))
+	 (round-lis (loop for i in stp collect (* (round (/ num i)) i)))
+	 (diff-lis (loop for i in round-lis collect (abs (- i num))))
+	 (smallest (apply #'min diff-lis)))
+    (nth (index-no smallest diff-lis) round-lis))))
+
+;; (loop for i in (gen-transition 1/8 7/4 20 0.85) collect (quant i '(1/8 1/12)))
+;; (quantize (float-to-ratio (gen-transition 1/8 7/4 20 1) :ratio 1) '(1 2 4) :type :ratio)
+
+   
+
+

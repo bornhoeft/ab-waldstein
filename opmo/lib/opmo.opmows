@@ -1,0 +1,12 @@
+("workspace-view/current"
+ "02-opmo/@template.opmo"
+)
+
+("workspace-view/history"
+ (("02-opmo/01-chord-devel.opmo" "01-chord-devel.opmo") ("02-opmo/08-inc-unison.opmo" "08-inc-unison.opmo") ("01-info/piano/Piano Grand-Layout.opmo" "Piano Grand-Layout.opmo") ("02-opmo/@template.opmo" "@template.opmo"))
+)
+
+("workspace-view/layout-ratios"
+ (1 (OM-CAPI::MAIN 361 NIL 964) (OM-CAPI::EDITOR-AND-LISTENER-LAYOUT 787 NIL 97))
+)
+

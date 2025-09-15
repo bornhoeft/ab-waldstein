@@ -1,0 +1,161 @@
+;;;---------------------------------------------------------
+;;; AB88
+;;; Copyright © 2018 Achim Bornhoeft
+;;;
+;;; General definitions/ variables
+;;;---------------------------------------------------------
+
+;;; Note ranges
+
+(defparameter range
+  (loop for i from 21 to 105 collect i))
+
+;; (length range) => 85
+
+(defparameter ranges 
+  (loop repeat 6 
+    for i from 21 by 14 collect
+    (loop repeat 15
+      for j from i
+      collect j)))
+      
+(defparameter pitches-piano1-1 (sixth ranges))
+(defparameter pitches-piano1-2 (fourth ranges))
+(defparameter pitches-piano1-3 (second ranges))
+(defparameter pitches-piano2-1 (fifth ranges))
+(defparameter pitches-piano2-2 (third ranges))
+(defparameter pitches-piano2-3 (first ranges))
+
+(defparameter all-pitches
+  (list pitches-piano1-1 pitches-piano1-2 pitches-piano1-3
+        pitches-piano2-1 pitches-piano2-2 pitches-piano2-3))
+
+(defun first-last (lst)
+  (list (first lst) (first (last lst))))
+
+(defparameter ambitus-piano1-1 (first-last pitches-piano1-1))
+(defparameter ambitus-piano1-2 (first-last pitches-piano1-2))
+(defparameter ambitus-piano1-3 (first-last pitches-piano1-3))
+(defparameter ambitus-piano2-1 (first-last pitches-piano2-1))
+(defparameter ambitus-piano2-2 (first-last pitches-piano2-2))
+(defparameter ambitus-piano2-3 (first-last pitches-piano2-3))
+
+(defparameter all-ambitus 
+  (list ambitus-piano1-1 ambitus-piano1-2 ambitus-piano1-3
+        ambitus-piano2-1 ambitus-piano2-2 ambitus-piano2-3))
+
+(defun get-elements (lst start end)
+  (list (nth start lst) (nth end lst)))
+
+;;; Piano I
+
+(defparameter ambitus-piano1-1-rh (get-elements pitches-piano1-1 14 7))
+(defparameter ambitus-piano1-1-lh (get-elements pitches-piano1-1 7 0))
+
+(defparameter ambitus-piano1-2-rh (get-elements pitches-piano1-2 14 7))
+(defparameter ambitus-piano1-2-lh (get-elements pitches-piano1-2 7 0))
+
+(defparameter ambitus-piano1-3-rh (get-elements pitches-piano1-3 14 7))
+(defparameter ambitus-piano1-3-lh (get-elements pitches-piano1-3 7 0))
+
+;;; Piano II
+
+(defparameter ambitus-piano2-1-rh (get-elements pitches-piano2-1 14 7))
+(defparameter ambitus-piano2-1-lh (get-elements pitches-piano2-1 7 0))
+
+(defparameter ambitus-piano2-2-rh (get-elements pitches-piano2-2 14 7))
+(defparameter ambitus-piano2-2-lh (get-elements pitches-piano2-2 7 0))
+
+(defparameter ambitus-piano2-3-rh (get-elements pitches-piano2-3 14 7))
+(defparameter ambitus-piano2-3-lh (get-elements pitches-piano2-3 7 0))
+
+(defparameter ambitus-hands
+  (list
+  ambitus-piano1-1-rh ambitus-piano1-1-lh 
+  ambitus-piano1-2-rh ambitus-piano1-2-lh 
+  ambitus-piano1-3-rh ambitus-piano1-3-lh
+  ambitus-piano2-1-rh ambitus-piano2-1-lh 
+  ambitus-piano2-2-rh ambitus-piano2-2-lh 
+  ambitus-piano2-3-rh ambitus-piano2-3-lh))
+
+(defparameter pitches-hand
+(assign-variable 'pitches-hand                
+                 (reverse
+  (loop for i from 0 to (- (length range) 7) by 7
+    collect
+    (loop for j from i to (+ 7 i)
+      collect (nth j range))))))
+
+;; (midi-to-pitch pitches-hand)
+
+;;; Piano I
+
+(defparameter pitches-piano1-1-rh pitches-hand0)
+(defparameter pitches-piano1-1-lh pitches-hand1)
+
+(defparameter pitches-piano1-2-rh pitches-hand4)
+(defparameter pitches-piano1-2-lh pitches-hand5)
+
+(defparameter pitches-piano1-3-rh pitches-hand8)
+(defparameter pitches-piano1-3-lh pitches-hand9)
+
+;;; Piano II
+
+(defparameter pitches-piano2-1-rh pitches-hand2)
+(defparameter pitches-piano2-1-lh pitches-hand3)
+
+(defparameter pitches-piano2-2-rh pitches-hand6)
+(defparameter pitches-piano2-2-lh pitches-hand7)
+
+(defparameter pitches-piano2-3-rh pitches-hand10)
+(defparameter pitches-piano2-3-lh pitches-hand11)
+
+(defparameter pitches-hands
+  (list
+  pitches-piano1-1-rh pitches-piano1-1-lh 
+  pitches-piano1-2-rh pitches-piano1-2-lh 
+  pitches-piano1-3-rh pitches-piano1-3-lh
+  pitches-piano2-1-rh pitches-piano2-1-lh 
+  pitches-piano2-2-rh pitches-piano2-2-lh 
+  pitches-piano2-3-rh pitches-piano2-3-lh))
+
+;; (midi-to-pitch pitches-hands)
+
+;;; Pitches - Euclidean scales/chords
+
+;; (gen-binary-euclidean 1 14 9 9) ; => (1 0 1 1 0 1 1 0 1 1 0 1 1 0)
+;; (defparameter eclid-chord (pattern-map '((1 0) 2) (gen-binary-euclidean 1 14 9 9))) => ; (2 1 2 1 2 1 2 1 2)
+
+(defparameter euclidean-intervals 
+  (pattern-map
+ '(((1 0 0 0 0 0 0 0 0 0 0 0 0 0) 14)
+   ((1 0 0 0 0 0 0) 7)
+   ((1 0 0 0 0) 5)
+   ((1 0 0 0) 4)
+   ((1 0 0) 3)
+   ((1 0) 2))  
+(loop for i from 1 to 14
+  collect (gen-binary-euclidean 1 14 i i))))
+
+#|
+((14) ; ninth = range of each player
+(7 7) ; fifth = division for 2 hands
+(5 5 4) 
+(4 3 4 3) 
+(3 3 3 3 2) 
+(3 2 2 3 2 2) 
+(2 2 2 2 2 2 2) ; whole-tone scale
+(2 1 2 2 2 1 2 2) 
+(2 1 2 1 2 1 2 1 2) ; 10 pitches (all fingers)
+(2 1 1 2 1 2 1 1 2 1) 
+(2 1 1 1 2 1 1 1 2 1 1) 
+(2 1 1 1 1 1 2 1 1 1 1 1) 
+(1 1 1 1 1 1 1 1 1 1 1 1 2) 
+(1 1 1 1 1 1 1 1 1 1 1 1 1 1)) ; chromstic scale
+|#
+
+(defparameter euclidean-scales
+  (midi-to-pitch (loop for i in euclidean-intervals collect
+    (dx-x i 60))))
+
+;; (chordize euclidean-scales)

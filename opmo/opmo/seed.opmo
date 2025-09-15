@@ -1,0 +1,64 @@
+;;;---------------------------------------------------------
+;;; AB88
+;;; Copyright © 2018 Achim Bornhoeft
+;;;
+;;; Seed system
+;;;
+;;;---------------------------------------------------------
+
+;;; LISP random
+;;; https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node133.html
+(random 10 *random-state*)
+
+)
+;;; OM function with seed
+
+(rnd 10 :low 0 :high 10 :seed 123)
+
+;;; seed in a loop, starts always with 123
+(loop repeat 10   
+  initially (init-seed 123)
+    collect (rnd1 :low 0 :high 10))
+
+
+;;; seed in a loop, starts always with 123
+(loop repeat 10    
+  initially (init-seed 123)
+    collect (rnd1 :low 0 :high 10 :seed (seed)))
+
+;;;seed 123; defparameter with :seed call
+
+(lo(defparameter chords3
+  (let ((lisrot (gen-rotate :right '(5 5 4) :type :seq)))
+  (chordize 
+   (midi-to-pitch 
+    (mcflatten
+     (matrix-transpose
+       (loop for i in start-pitches
+         initially (init-seed 567)
+         collect
+         (dx-x 
+          (rnd-sample 12 lisrot :norep t :seed (seed)) i))))))))
+;;; defun with fixed seed
+(defun meterial (reps start-pitch intervals seed)
+  (interval-to-pitch
+   (rnd-sample reps intervals :norep t :seed seed) :start start-pitch))
+;; (cons 'e (pick-intervals 50 'c6 '(1 -1 2 -2 11 -11 13 -13 7 -7) 123))
+
+(cons 's 
+      (ambitus '(b4 c6)
+               (interval-to-pitch
+                (rnd-sample 48 '(1 -1 2 -2 11 11 -11 -11 13 13 -13 -13 7 -7) 
+                            :norep t :seed 3)
+
+;;; defun with accumulating seed
+(defun rep-dev-interpol (interp note seed)
+  "Add a semitone randomly higher or lower."
+  (loop for i in interp 
+    append
+    (loop repeat (- i 1) ; each distance -1
+      initially (rnd-seed seed)
+      for j = (rnd1 :low 0 :high 1 :seed (seed)) ; 0 and 1 randomly 
+      collect note into reslis
+      finally (return (cons (+ note (if (= j 0) -2 2)) reslis)))))
+

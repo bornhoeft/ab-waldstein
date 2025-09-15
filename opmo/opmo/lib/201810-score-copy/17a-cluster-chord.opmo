@@ -1,0 +1,198 @@
+;;;---------------------------------------------------------
+;;; AB88 - Waldstein
+;;; Copyright © 2018 Achim Bornhoeft
+;;;
+;;; 17a-cluster-chord
+;;;
+;;; Cluster tremolo field (tremolo chords)
+;;;---------------------------------------------------------
+
+(load (merge-pathnames "functions.lisp" *load-truename*))
+(load (merge-pathnames "global.opmo" *load-truename*))
+
+;;;---------------------------------------------------------
+;;; Initialisation
+;;;---------------------------------------------------------
+
+(setf size 8)
+(setf bars (gen-repeat size '(4/4)))
+(setf pause (length-span bars '(-w)))
+
+(setf piano1-1-rh pause piano1-1-lh pause piano1-2-rh pause piano1-2-lh pause 
+      piano1-3-rh pause piano1-3-lh pause piano2-1-rh pause piano2-1-lh pause
+      piano2-2-rh pause piano2-2-lh pause piano2-3-rh pause piano2-3-lh pause)
+
+;;;---------------------------------------------------------
+;;; Parameters
+;;;---------------------------------------------------------
+
+;;; Pitches 
+
+;; (pattern-map '((1 0) 2) (gen-binary-euclidean 1 14 8 8)) => (2 1 2 2 2 1 2 2)
+(defparameter intervals-left '(-2 -1 -2 -2))
+(defparameter intervals-right '(2 1 2 2))
+
+(defparameter no-chords 10)
+
+;; ambitus-hands: ((105 98) (98 91) (77 70) (70 63) (49 42) (42 35) (91 84) (84 77) (63 56) (56 49) (35 28) (28 21))
+
+;;; pitches for the right hands
+
+(defparameter chords-rh
+  (loop for i from 0 to (- (length ambitus-hands) 1) by 2
+    collect 
+    (flatten
+     (chordize
+      (midi-to-pitch 
+       (rnd-sample no-chords 
+                   (dx-x 
+                    (gen-rotate :left intervals-right :type :seq) 
+                    (second (nth i ambitus-hands))) 
+                   :norep t :seed 123))))))
+
+;;; pitches for the left hands
+
+(defparameter chords-lh
+  (loop for i from 1 to (- (length ambitus-hands) 1) by 2
+    collect
+    (flatten
+     (chordize
+      (midi-to-pitch 
+       (rnd-sample no-chords 
+                   (dx-x 
+                    (gen-rotate :left intervals-left :type :seq) 
+                    (first (nth i ambitus-hands))) 
+                   :norep t :seed 123))))))
+
+(defparameter all-chords
+  (append chords-rh chords-lh))
+
+;;; durations
+
+#|
+(defparameter all-durations1
+(loop for i in all-chords
+  collect (gen-repeat (length i) 1)))
+
+(defparameter all-durations
+  (loop for i in all-chords
+    initially (init-seed 3)
+    collect (rnd-sum-to-size 10 no-chords '(3/4 4/4 5/4 6/4))))
+|#
+
+(defparameter all-dur
+  (loop repeat 12
+    initially (init-seed 3)
+    collect (rnd-sum-to-size 10 no-chords '(3/4 4/4 5/4 6/4))))
+
+(defparameter all-durations
+(loop for i in all-dur
+  for j from 0
+  when (evenp j) collect i into res1
+  when (oddp j) collect i into res2
+  finally (return (append res1 res2))))
+
+;;; articulations
+
+#|
+(q b4 trem-x) ; 1/64
+(q b4 trem-3s) ; 1/48
+(q b4 trem-t) ; 1/32 
+(q b4 trem-7e) ; 1/56
+(q b4 trem-5e) ; 1/40
+(q b4 trem-7q) ; 1/28
+|#
+ 
+(defparameter tremolos '(trem-x trem-3s trem-t trem-7e trem-5e trem-7q trem-x trem-3s trem-t trem-7e trem-5e trem-7q))
+
+(defparameter all-tremolos
+  (loop for i in tremolos
+    for j in all-durations
+    collect (loop repeat (length j) collect i)))
+
+;;; DYNAMICS !!!
+
+(defparameter all-dynamics
+  '(ppp< PP> ppp< p> > ppp< mp> > ppp> pp>))
+
+;;;---------------------------------------------------------
+;;; Parts
+;;;---------------------------------------------------------
+
+(setf all-voices
+      (set-assignment 'voice
+        (make-omn
+         :pitch all-chords
+         :length all-durations
+         :articulation all-tremolos
+         :velocity all-dynamics)))
+
+(setf piano1-1-rh voice0 piano1-2-rh voice1 piano1-3-rh voice2
+      piano2-1-rh voice3 piano2-2-rh voice4 piano2-3-rh voice5)
+
+(setf piano1-1-lh voice6 piano1-2-lh voice7 piano1-3-lh voice8
+      piano2-1-lh voice9 piano2-2-lh voice10 piano2-3-lh voice11)
+
+;;;---------------------------------------------------------
+;;; Score and Layout
+;;;---------------------------------------------------------
+
+(def-score 17a-cluster-chord
+           (:title "AB88"
+                   :composer "Achim Bornhoeft"
+                   :copyright "Copyright © 2018"
+                   :key-signature 'chromatic
+                   :time-signature '((1 1 1 1) 4)
+                   :tempo 80
+                   :layout 
+                   (list
+                    (bracket-group
+                     (brace-group 
+                      (treble-layout 'piano1-1-rh) 
+                      (treble-layout 'piano1-1-lh) :name "Piano 1.1" :abbr "Pno 1.1")
+                     (brace-group
+                      (treble-layout 'piano1-2-rh) 
+                      (treble-layout 'piano1-2-lh) :name "Piano 1.2" :abbr "Pno 1.2")
+                     (brace-group
+                      (bass-layout 'piano1-3-rh) 
+                      (bass-layout 'piano1-3-lh) :name "Piano 1.3" :abbr "Pno 1.3"))
+                    (bracket-group
+                     (brace-group
+                      (treble-layout 'piano2-1-rh)
+                      (treble-layout 'piano2-1-lh) :name "Piano 2.1" :abbr "Pno 2.1")
+                     (brace-group
+                      (treble-layout 'piano2-2-rh) 
+                      (bass-layout 'piano2-2-lh) :name "Piano 2.2" :abbr "Pno 2.2")
+                     (brace-group
+                      (bass-layout 'piano2-3-rh)
+                      (bass-layout'piano2-3-lh) :name "Piano 2.3" :abbr "Pno 2.3"))))	
+  
+  ;;; Piano I
+  
+  (piano1-1-rh :omn piano1-1-rh :channel 1 :pan 32)  
+  (piano1-1-lh :omn piano1-1-lh :channel 2 :pan 32)
+  
+  (piano1-2-rh :omn piano1-2-rh :channel 3 :pan 32)
+  (piano1-2-lh :omn piano1-2-lh :channel 4 :pan 32)
+  
+  (piano1-3-rh :omn piano1-3-rh :channel 5 :pan 32)
+  (piano1-3-lh :omn piano1-3-lh :channel 6 :pan 32)
+  
+  ;;; Piano II
+  
+  (piano2-1-rh :omn piano2-1-rh :channel 7 :pan 96)
+  (piano2-1-lh :omn piano2-1-lh :channel 8 :pan 96)
+  
+  (piano2-2-rh :omn piano2-2-rh :channel 9 :pan 96)
+  (piano2-2-lh :omn piano2-2-lh :channel 11 :pan 96)
+  
+  (piano2-3-rh :omn piano2-3-rh :channel 12 :pan 96)
+  (piano2-3-lh :omn piano2-3-lh :channel 13 :pan 96))
+
+(display-musicxml '17a-cluster-chord)
+;; (display-midi '17a-cluster-chord)
+
+#|
+(with-open-file (file "~/Documents/projekte/03-kammermusik5-7/Waldstein/sco/xml/17a-cluster-chord.xml" :direction :output :if-exists :supersede)
+  (score-to-musicxml (get-score '17a-cluster-chord) file))
+|#

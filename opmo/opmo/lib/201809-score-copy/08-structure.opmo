@@ -1,0 +1,190 @@
+;;;---------------------------------------------------------
+;;; AB88 - Waldstein
+;;; Copyright © 2018 Achim Bornhoeft
+;;;
+;;; Structure 8
+;;;
+;;; Field of random notes with accelaration grades of octave unisons
+;;;---------------------------------------------------------
+
+(load (merge-pathnames "functions.lisp" *load-truename*))
+(load (merge-pathnames "global.opmo" *load-truename*))
+
+;;;---------------------------------------------------------
+;;; Initialisation
+;;;---------------------------------------------------------
+
+(setf size 8)
+(setf bars (gen-repeat size '(4/4)))
+(setf pause (length-span bars '(-w)))
+
+(setf piano1-1-rh pause piano1-1-lh pause piano1-2-rh pause piano1-2-lh pause 
+      piano1-3-rh pause piano1-3-lh pause piano2-1-rh pause piano2-1-lh pause
+      piano2-2-rh pause piano2-2-lh pause piano2-3-rh pause piano2-3-lh pause)
+
+;;;---------------------------------------------------------
+;;; Parameters
+;;;---------------------------------------------------------
+
+(defparameter no-notes 200)
+(defparameter all-durations (gen-repeat no-notes  (/ 1 4 5)))
+
+;; (length all-durations)
+
+(setf chord '(c4 cs4 d4 ds4 e4 f4 fs4 g4 gs4 a4 as4 b4))
+
+(setf rnd-sets 
+      (matrix-transpose
+      (gen-eval (length all-durations)
+      '(rnd-unique 4 chord) :seed 123)))
+
+;;; fixed random weights of unisons
+;; (defparameter unisons (gen-weight no-notes '((4 9) (1 1)) :seed 11))
+  
+(defun scaling-sum (lis new-sum)
+  (let* ((sum (reduce #'+ lis))
+    (sum-factor (/ new-sum sum)))
+    (loop for i in lis
+      collect (* sum-factor i))))
+
+;;; accelerating unisons
+(defparameter gentrans
+  (mapcar #'round
+  (scaling-sum  
+  (gen-transition 8 1 30 0.97)
+  no-notes)))
+
+;; (reduce #'+ gentrans)
+
+(defparameter unisons
+  (gen-transition 3 1 30 0.7 :rounded t))
+
+(defparameter unisons-trans
+    (loop for i in gentrans
+      for j in unisons
+      append (loop repeat (- i 1) collect 4)
+      collect j))
+
+;; (length unisons-trans)
+
+(defparameter unison-pitches 
+      (gen-unison rnd-sets        
+                  :unison unisons-trans :seed 123))
+
+;; (length unison-pitches)
+
+(defparameter ambitus-parts
+  (midi-to-pitch 
+   (list ambitus-piano2-1 ambitus-piano1-2 ambitus-piano2-2 ambitus-piano1-3)))
+
+(defparameter all-pitches
+  (loop for i in ambitus-parts 
+    for j in unison-pitches
+    append (ambitus-scale i i (list j))))
+
+;; (length all-pitches)
+
+(defun same (lis yes no)
+  (loop for i in lis
+    for j in (cdr lis)
+    collect (equal i j) into reslis
+    finally (return 
+             (if (member nil reslis) no yes))))
+
+;; (same '(2 2 2) 'gliss '-)
+
+;; make an accent when unison
+(defparameter accents
+  (loop for i in
+  (matrix-transpose unison-pitches) collect
+    (same i 'marc '-))) ; calls same function
+
+;;; TODO: Entwicklung der Oktav-Akzente
+(defparameter velocities
+  (loop for i in
+  (matrix-transpose unison-pitches) collect
+    (same i 'mp 'pp)))
+
+(defparameter velocities 
+  (loop for i in unisons-trans
+    if (= i 4) 
+    collect 'p 
+    else
+    collect 'mf))
+   
+;;;---------------------------------------------------------
+;;; Parts
+;;;---------------------------------------------------------
+
+(setf all-voices
+      (set-assignment 'voice
+        (make-omn
+         :pitch all-pitches
+         :length all-durations
+         :velocity velocities
+         :articulation accents
+         :span :pitch)))
+
+(setf piano2-1-rh voice0
+      piano1-2-lh voice1
+      piano2-2-lh voice2
+      piano1-3-lh voice3) 
+
+;;;---------------------------------------------------------
+;;; Score and Layout
+;;;---------------------------------------------------------
+
+(def-score unison
+           (:title "AB88"
+                   :composer "Achim Bornhoeft"
+                   :copyright "Copyright © 2018"
+                   :key-signature 'chromatic
+                   :time-signature '((1 1 1 1) 4)
+                   :tempo 80
+                   :layout 
+                   (list
+                    (bracket-group
+                     (brace-group 
+                      (treble-layout 'piano1-1-rh) 
+                      (treble-layout 'piano1-1-lh) :name "Piano 1.1" :abbr "Pno 1.1")
+                     (brace-group
+                      (treble-layout 'piano1-2-rh) 
+                      (treble-layout 'piano1-2-lh) :name "Piano 1.2" :abbr "Pno 1.2")
+                     (brace-group
+                      (bass-layout 'piano1-3-rh) 
+                      (bass-layout 'piano1-3-lh) :name "Piano 1.3" :abbr "Pno 1.3"))
+                    (bracket-group
+                     (brace-group
+                      (treble-layout 'piano2-1-rh)
+                      (treble-layout 'piano2-1-lh) :name "Piano 2.1" :abbr "Pno 2.1")
+                     (brace-group
+                      (treble-layout 'piano2-2-rh) 
+                      (bass-layout 'piano2-2-lh) :name "Piano 2.2" :abbr "Pno 2.2")
+                     (brace-group
+                      (bass-layout 'piano2-3-rh)
+                      (bass-layout'piano2-3-lh) :name "Piano 2.3" :abbr "Pno 2.3"))))	
+  
+  ;;; Piano I
+  
+  (piano1-1-rh :omn piano1-1-rh :channel 1 :pan 32)  
+  (piano1-1-lh :omn piano1-1-lh :channel 2 :pan 32)
+  
+  (piano1-2-rh :omn piano1-2-rh :channel 3 :pan 32)
+  (piano1-2-lh :omn piano1-2-lh :channel 4 :pan 32)
+  
+  (piano1-3-rh :omn piano1-3-rh :channel 5 :pan 32)
+  (piano1-3-lh :omn piano1-3-lh :channel 6 :pan 32)
+  
+  ;;; Piano II
+  
+  (piano2-1-rh :omn piano2-1-rh :channel 7 :pan 96)
+  (piano2-1-lh :omn piano2-1-lh :channel 8 :pan 96)
+  
+  (piano2-2-rh :omn piano2-2-rh :channel 9 :pan 96)
+  (piano2-2-lh :omn piano2-2-lh :channel 11 :pan 96)
+  
+  (piano2-3-rh :omn piano2-3-rh :channel 12 :pan 96)
+  (piano2-3-lh :omn piano2-3-lh :channel 13 :pan 96))
+
+(display-musicxml 'unison)
+(display-midi 'unison)

@@ -1,0 +1,373 @@
+;;; file version
+
+3 
+
+;;; navigator
+
+(:GROUP "root"
+ ((:GROUP "01-info"
+   ((:GROUP "euclidean"
+     ((:FILE "01-info/euclidean/euclidean-chords.opmo")
+      (:FILE "01-info/euclidean/euclidean.lisp")
+      (:GROUP "info"
+       ((:FILE "01-info/euclidean/info/I3.pdf")
+        (:FILE
+         "01-info/euclidean/info/Toussaint 2005 Euclidean Rhythm.pdf")
+        (:FILE
+         "01-info/euclidean/info/Toussaint 2011 Good Rhythm.pdf")
+        (:FILE "01-info/euclidean/info/geometry-of-rhythm.pdf")))))
+    (:GROUP "piano"
+     ((:FILE "01-info/piano/03-midinote-numbers.pdf")
+      (:FILE "01-info/piano/Flageoletts.pdf")
+      (:FILE "01-info/piano/KlaviaturMitNoten.pdf")
+      (:FILE "01-info/piano/Piano Grand-Layout.opmo")
+      (:FILE "01-info/piano/The piano map.webarchive")))
+    (:GROUP "pieces"
+     ((:FILE
+       "01-info/pieces/Beethoven - Waldstein Sonata op.53 (1st mvmt).mp4")
+      (:FILE
+       "01-info/pieces/Brendel plays Liszt - Invocation (Audio + Sheet Music).mp4")
+      (:FILE
+       "01-info/pieces/György Ligeti - Three Pieces for Two Pianos [2 3].mp4")))
+    (:GROUP "scales"
+     ((:FILE
+       "01-info/scales/Koepf's Editions - Zu Messiaens \"Modi mit begrenzter Transpositionsmöglichkeit\".webarchive")
+      (:GROUP "scales_mid"
+       ((:FILE "01-info/scales/scales_mid/all_scales.mid")
+        (:FILE "01-info/scales/scales_mid/all_scales_root.mid")
+        (:FILE "01-info/scales/scales_mid/avoid_modes.mid")
+        (:FILE "01-info/scales/scales_mid/avoid_modes_root.mid")
+        (:FILE "01-info/scales/scales_mid/r_sym_scales.mid")
+        (:FILE "01-info/scales/scales_mid/r_sym_scales_root.mid")
+        (:FILE "01-info/scales/scales_mid/t_sym_scales.mid")
+        (:FILE "01-info/scales/scales_mid/t_sym_scales_root.mid")))))
+    (:GROUP "sketches"
+     ((:FILE "01-info/sketches/BWS-MUS-0118-03.pdf")
+      (:FILE "01-info/sketches/waldstein-skizzen.pdf")))))
+  (:GROUP "02-opmo"
+   ((:FILE "02-opmo/tests.opmo") (:FILE "02-opmo/seed.opmo")
+    (:FILE "02-opmo/functions.lisp") (:FILE "02-opmo/global.opmo")
+    (:FILE "02-opmo/@template.opmo")
+    (:FILE "02-opmo/01-chord-devel.opmo")
+    (:FILE "02-opmo/02-rep-to-trem.opmo")
+    (:FILE "02-opmo/03-inter-trem.opmo")
+    (:FILE "02-opmo/04-trem-to-scale.opmo")
+    (:FILE "02-opmo/05-rep-field-1.opmo")
+    (:FILE "02-opmo/06-acc-pitch-1.opmo")
+    (:FILE "02-opmo/07-acc-pitch-2.opmo")
+    (:FILE "02-opmo/08-inc-unison.opmo")
+    (:FILE "02-opmo/09-harm-field-1.opmo")
+    (:FILE "02-opmo/10-harm-field-2.opmo")
+    (:FILE "02-opmo/11-cluster-move.opmo")
+    (:FILE "02-opmo/12-cluster-diss.opmo")
+    (:FILE "02-opmo/13-chord-diss-51.opmo")
+    (:FILE "02-opmo/14-chord-diss-41.opmo")
+    (:FILE "02-opmo/15-chord-diss-31.opmo")
+    (:FILE "02-opmo/16-chord-diss-21.opmo")
+    (:FILE "02-opmo/17-wide-chord.opmo")
+    (:FILE "02-opmo/18a-cluster-chord.opmo")
+    (:FILE "02-opmo/18b-cluster-note.opmo")
+    (:FILE "02-opmo/19-arp-chords.opmo")
+    (:FILE "02-opmo/20-arp-chords-tend.opmo")
+    (:FILE "02-opmo/21-rep-field-2.opmo")
+    (:FILE "02-opmo/22-rep-rit.opmo")
+    (:FILE "02-opmo/23-cluster-move.opmo")
+    (:GROUP "lib"
+     ((:FILE "02-opmo/lib/01-field-points.opmo")
+      (:FILE "02-opmo/lib/03-chord-dev.opmo")
+      (:FILE "02-opmo/lib/03-trem-2scales.opmo")
+      (:FILE "02-opmo/lib/04-trem-2scales Kopie.opmo")
+      (:FILE "02-opmo/lib/05-scales-trans.opmo")
+      (:FILE "02-opmo/lib/08-unison.opmo")
+      (:FILE "02-opmo/lib/11-structure.opmo")
+      (:FILE "02-opmo/lib/12-structure.opmo")
+      (:FILE "02-opmo/lib/14-structure.opmo")
+      (:FILE "02-opmo/lib/15-structure.opmo")
+      (:FILE "02-opmo/lib/17-structure.opmo")
+      (:FILE "02-opmo/lib/18-rep-field-2.opmo")
+      (:FILE "02-opmo/lib/21-chord-diss-11.opmo")
+      (:FILE "02-opmo/lib/21-note-rep-chord.opmo")
+      (:FILE "02-opmo/lib/Copy of 03a-chord-dev.opmo")
+      (:FILE "02-opmo/lib/Copy of 05-chord-dev.opmo")
+      (:FILE "02-opmo/lib/Copy of 07-unison Kopie.opmo")
+      (:FILE "02-opmo/lib/Copy of 07-unison.opmo")
+      (:FILE "02-opmo/lib/Copy of 09-unison.opmo")
+      (:FILE "02-opmo/lib/Copy of 12-cluster-dissolve.opmo")
+      (:FILE "02-opmo/lib/untitled (1).opmo")
+      (:GROUP "201809-score-copy"
+       ((:FILE "02-opmo/lib/201809-score-copy/01-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/02-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/03-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/04-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/05-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/06-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/07-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/08-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/09-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/10-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/11-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/12-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/13-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/14-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/15-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/16-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/17a-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/17b-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/18-structure.opmo")
+        (:FILE
+         "02-opmo/lib/201809-score-copy/19-chord-repetitions.opmo")
+        (:FILE
+         "02-opmo/lib/201809-score-copy/Copy of 18-structure.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/functions.lisp")
+        (:FILE "02-opmo/lib/201809-score-copy/global.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/tests.opmo")
+        (:FILE "02-opmo/lib/201809-score-copy/untitled (1).opmo")
+        (:GROUP "lib"
+         ((:FILE
+           "02-opmo/lib/201809-score-copy/lib/01-field-points.opmo")
+          (:FILE
+           "02-opmo/lib/201809-score-copy/lib/03-chord-dev.opmo")
+          (:FILE
+           "02-opmo/lib/201809-score-copy/lib/03-trem-2scales.opmo")
+          (:FILE
+           "02-opmo/lib/201809-score-copy/lib/04-trem-2scales Kopie.opmo")
+          (:FILE
+           "02-opmo/lib/201809-score-copy/lib/05-scales-trans.opmo")
+          (:FILE "02-opmo/lib/201809-score-copy/lib/08-unison.opmo")
+          (:FILE
+           "02-opmo/lib/201809-score-copy/lib/11-structure.opmo")
+          (:FILE
+           "02-opmo/lib/201809-score-copy/lib/12-structure.opmo")
+          (:FILE
+           "02-opmo/lib/201809-score-copy/lib/14-structure.opmo")
+          (:FILE
+           "02-opmo/lib/201809-score-copy/lib/15-structure.opmo")
+          (:FILE
+           "02-opmo/lib/201809-score-copy/lib/17-structure.opmo")
+          (:FILE
+           "02-opmo/lib/201809-score-copy/lib/Copy of 03a-chord-dev.opmo")
+          (:FILE
+           "02-opmo/lib/201809-score-copy/lib/Copy of 05-chord-dev.opmo")
+          (:FILE
+           "02-opmo/lib/201809-score-copy/lib/Copy of 07-unison Kopie.opmo")
+          (:FILE
+           "02-opmo/lib/201809-score-copy/lib/Copy of 07-unison.opmo")
+          (:FILE
+           "02-opmo/lib/201809-score-copy/lib/Copy of 09-unison.opmo")
+          (:FILE
+           "02-opmo/lib/201809-score-copy/lib/Copy of 12-cluster-dissolve.opmo")))))
+      (:GROUP "201810-score-copy"
+       ((:FILE "02-opmo/lib/201810-score-copy/01-chord-devel.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/02-rep-to-trem.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/03-inter-trem.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/04-trem-to-scale.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/05-rep-field-1.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/06-acc-pitch-1.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/07-acc-pitch-2.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/08-inc-unison.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/09-harm-field-1.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/10-harm-field-2.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/11-cluster-diss.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/12-chord-diss-51.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/13-chord-diss-41.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/14-chord-diss-31.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/15-chord-diss-21.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/16-wide-chord.opmo")
+        (:FILE
+         "02-opmo/lib/201810-score-copy/17a-cluster-chord.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/17b-cluster-note.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/18-rep-field-2.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/19-cluster-move.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/20-rep-rit.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/21-chord-diss-11.opmo")
+        (:FILE
+         "02-opmo/lib/201810-score-copy/22-note-rep-chord.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/23-arp-chords.opmo")
+        (:FILE
+         "02-opmo/lib/201810-score-copy/24-arp-chords-tend.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/functions.lisp")
+        (:FILE "02-opmo/lib/201810-score-copy/global.opmo")
+        (:FILE "02-opmo/lib/201810-score-copy/tests.opmo")))))))
+  (:GROUP "03-score"
+   ((:FILE "03-score/20181112Waldstein - Partitur.pdf")
+    (:GROUP "parts"
+     ((:FILE "03-score/parts/20181112Waldstein - Klavier 1.1.pdf")
+      (:FILE "03-score/parts/20181112Waldstein - Klavier 1.2.pdf")
+      (:FILE "03-score/parts/20181112Waldstein - Klavier 1.3.pdf")
+      (:FILE "03-score/parts/20181112Waldstein - Klavier 2.1.pdf")
+      (:FILE "03-score/parts/20181112Waldstein - Klavier 2.2.pdf")
+      (:FILE
+       "03-score/parts/20181112Waldstein - Klavier 2.3.pdf")))))
+  (:GROUP "04-audio"
+   ((:FILE "04-audio/20181105Waldstein-Sim-T53-139.mp3")
+    (:FILE "04-audio/20181105Waldstein-Sim-T69-130.wav")
+    (:FILE "04-audio/20181105Waldstein-Sim.mp3")
+    (:FILE "04-audio/20190125-UA-Waldstein.aiff")
+    (:GROUP "parts"
+     ((:FILE "04-audio/parts/20181105Waldstein1.1.mp3")
+      (:FILE "04-audio/parts/20181105Waldstein1.2.mp3")
+      (:FILE "04-audio/parts/20181105Waldstein1.3.mp3")
+      (:FILE "04-audio/parts/20181105Waldstein2.1.mp3")
+      (:FILE "04-audio/parts/20181105Waldstein2.2.mp3")
+      (:FILE "04-audio/parts/20181105Waldstein2.3.mp3")))))
+  (:GROUP "05-video" ((:FILE "05-video/Waldstein.mp4")))
+  (:GROUP "06-presentation"
+   ((:FILE "06-presentation/20210111-Aesthetic-Workflow.pptx")
+    (:FILE "06-presentation/Copy of 08-inc-unison.opmo")
+    (:FILE "06-presentation/Copy of 09-harm-field-1.opmo")
+    (:FILE "06-presentation/Copy of 11-cluster-move.opmo")
+    (:FILE "06-presentation/Copy of 14-chord-diss-41.opmo")
+    (:FILE "06-presentation/Copy of 22-rep-rit.opmo")
+    (:FILE "06-presentation/Waldstein-exmp.m4v")
+    (:GROUP "screenshots"
+     ((:GROUP "pdf"
+       ((:FILE "06-presentation/screenshots/pdf/Waldstein-Teil1.pdf")
+        (:FILE
+         "06-presentation/screenshots/pdf/Waldstein-Teil10.pdf")
+        (:FILE
+         "06-presentation/screenshots/pdf/Waldstein-Teil11.pdf")
+        (:FILE
+         "06-presentation/screenshots/pdf/Waldstein-Teil12.pdf")
+        (:FILE
+         "06-presentation/screenshots/pdf/Waldstein-Teil13.pdf")
+        (:FILE
+         "06-presentation/screenshots/pdf/Waldstein-Teil14.pdf")
+        (:FILE
+         "06-presentation/screenshots/pdf/Waldstein-Teil15.pdf")
+        (:FILE
+         "06-presentation/screenshots/pdf/Waldstein-Teil16.pdf")
+        (:FILE
+         "06-presentation/screenshots/pdf/Waldstein-Teil17.pdf")
+        (:FILE
+         "06-presentation/screenshots/pdf/Waldstein-Teil18.pdf")
+        (:FILE
+         "06-presentation/screenshots/pdf/Waldstein-Teil19.pdf")
+        (:FILE "06-presentation/screenshots/pdf/Waldstein-Teil2.pdf")
+        (:FILE
+         "06-presentation/screenshots/pdf/Waldstein-Teil20.pdf")
+        (:FILE
+         "06-presentation/screenshots/pdf/Waldstein-Teil21.pdf")
+        (:FILE
+         "06-presentation/screenshots/pdf/Waldstein-Teil22.pdf")
+        (:FILE
+         "06-presentation/screenshots/pdf/Waldstein-Teil23.pdf")
+        (:FILE
+         "06-presentation/screenshots/pdf/Waldstein-Teil24.pdf")
+        (:FILE "06-presentation/screenshots/pdf/Waldstein-Teil3.pdf")
+        (:FILE "06-presentation/screenshots/pdf/Waldstein-Teil4.pdf")
+        (:FILE "06-presentation/screenshots/pdf/Waldstein-Teil5.pdf")
+        (:FILE "06-presentation/screenshots/pdf/Waldstein-Teil6.pdf")
+        (:FILE "06-presentation/screenshots/pdf/Waldstein-Teil7.pdf")
+        (:FILE "06-presentation/screenshots/pdf/Waldstein-Teil8.pdf")
+        (:FILE
+         "06-presentation/screenshots/pdf/Waldstein-Teil9.pdf")))
+      (:GROUP "png"
+       ((:FILE "06-presentation/screenshots/png/01-chord-devel.png")
+        (:FILE
+         "06-presentation/screenshots/png/04-trem-to-scale.png")
+        (:FILE
+         "06-presentation/screenshots/png/05-rep-field-1-cut.png")
+        (:FILE "06-presentation/screenshots/png/05-rep-field-1.png")
+        (:FILE "06-presentation/screenshots/png/06-acc-pitch-1.png")
+        (:FILE "06-presentation/screenshots/png/07-acc-pitch-2.png")
+        (:FILE "06-presentation/screenshots/png/08-inc-unison.png")
+        (:FILE "06-presentation/screenshots/png/09-harm-field-1.png")
+        (:FILE "06-presentation/screenshots/png/10-harm-field-2.png")
+        (:FILE "06-presentation/screenshots/png/11-cluster-move.png")
+        (:FILE "06-presentation/screenshots/png/12-cluster-diss.png")
+        (:FILE
+         "06-presentation/screenshots/png/13-chord-diss-51.png")
+        (:FILE
+         "06-presentation/screenshots/png/14-chord-diss-41.png")
+        (:FILE
+         "06-presentation/screenshots/png/15-chord-diss-31.png")
+        (:FILE
+         "06-presentation/screenshots/png/16-chord-diss-21.png")
+        (:FILE "06-presentation/screenshots/png/17-wide-chord.png")
+        (:FILE
+         "06-presentation/screenshots/png/18a-cluster-chord.png")
+        (:FILE
+         "06-presentation/screenshots/png/18b-cluster-note.png")
+        (:FILE "06-presentation/screenshots/png/19-arp-chords.png")
+        (:FILE
+         "06-presentation/screenshots/png/20-arp-chords-tend.png")
+        (:FILE "06-presentation/screenshots/png/21-rep-field-2.png")
+        (:FILE "06-presentation/screenshots/png/22-rep-rit.png")
+        (:FILE "06-presentation/screenshots/png/23-cluster-move.png")
+        (:FILE
+         "06-presentation/screenshots/png/?-Bildschirmfoto 2018-09-28 um 16.08.50.png")
+        (:FILE
+         "06-presentation/screenshots/png/Bildschirmfoto 2020-09-01 um 16.48.29.png")))))))))
+
+;;; layout plist
+
+(:NAVIGATOR-RECT #(0.0D0 0.0D0 224.0D0 1001.0D0)
+ :SELECTED-NAVIGATOR-TAB-TAG 0 :NAVIGATOR-COLLAPSED-P NIL
+ :MIDDLE-RECT #(225.0D0 0.0D0 1199.0D0 1001.0D0) :COMPOSER-VISIBLE-P
+ T :ASSISTANT-VISIBLE-P T :LISTENER-RECT
+ #(0.0D0 872.0D0 748.0D0 129.0D0) :LISTENER-COLLAPSED-P NIL
+ :UTILITIES-RECT #(1425.0D0 0.0D0 255.0D0 1001.0D0)
+ :SELECTED-UTILITIES-TAB-TAG 6 :QUICK-VIEW-COLLAPSED-P T
+ :UTILITIES-COLLAPSED-P NIL)
+
+;;; composer
+
+"02-opmo/@template.opmo" 
+
+;;; list of assistants
+
+("03-score/parts/20181112Waldstein - Klavier 1.3.pdf")
+
+;;; grid menu state 
+
+(:GRID-MENU-STATE
+ (:COMPOSER
+  ("02-opmo/lib/201810-score-copy/24-arp-chords-tend.opmo"
+   "02-opmo/lib/untitled (1).opmo" "02-opmo/08-inc-unison.opmo"
+   "06-presentation/Copy of 22-rep-rit.opmo"
+   "06-presentation/Copy of 13-chord-diss-51 (Autosaved).opmo"
+   "06-presentation/Copy of 11-cluster-move.opmo"
+   "06-presentation/Copy of 09-harm-field-1.opmo"
+   "02-opmo/14-chord-diss-41.opmo" "02-opmo/15-chord-diss-31.opmo"
+   "02-opmo/12-cluster-diss.opmo" "02-opmo/20-arp-chords-tend.opmo"
+   "02-opmo/19-arp-chords.opmo" "02-opmo/22-rep-rit.opmo"
+   "02-opmo/04-trem-to-scale.opmo" "02-opmo/03-inter-trem.opmo"
+   "02-opmo/02-rep-to-trem.opmo" "02-opmo/lib/03-chord-dev.opmo"
+   "02-opmo/lib/01-field-points.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/lib/tests/20150721help.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/lib/sections/20160605orbit-part01.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/lib/sections/20150531.2score.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/lib/sections/20150531.1score.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/orbit1-10.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/Copy of orbit-section10.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/orbit-section10.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/orbit-section09.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/orbit-section08.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/orbit-section07.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/orbit-section06.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/orbit-section05.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/orbit-section04.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/orbit-section03.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/orbit-section02.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/orbit-section01.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/orbit-section11.opmo"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/functions.lisp"
+   "/Users/born/Documents/werke/AB83-Orbit/opusmodus/20160920/orbit.opmo"
+   "02-opmo/@template.opmo" "02-opmo/functions.lisp"
+   "02-opmo/tests.opmo" "02-opmo/23-cluster-move.opmo"
+   "02-opmo/global.opmo" "02-opmo/13-chord-diss-51.opmo"
+   "02-opmo/17-wide-chord.opmo" "02-opmo/18b-cluster-note.opmo"
+   "02-opmo/21-rep-field-2.opmo" "02-opmo/seed.opmo"
+   "02-opmo/01-chord-devel.opmo" "02-opmo/18a-cluster-chord.opmo"
+   "02-opmo/07-acc-pitch-2.opmo" "02-opmo/11-cluster-move.opmo"
+   "02-opmo/09-harm-field-1.opmo" "02-opmo/10-harm-field-2.opmo"
+   "06-presentation/Copy of 08-inc-unison.opmo"
+   "06-presentation/Copy of 14-chord-diss-41.opmo"
+   "02-opmo/05-rep-field-1.opmo")
+  :ASSISTANTS
+  ("03-score/parts/20181112Waldstein - Klavier 1.3.pdf"
+   "03-score/parts/20181112Waldstein - Klavier 1.2.pdf"
+   "03-score/parts/20181112Waldstein - Klavier 1.1.pdf"
+   "06-presentation/20210111-Aesthetic-Workflow.pptx")))
+
+;;; quick-view pathname

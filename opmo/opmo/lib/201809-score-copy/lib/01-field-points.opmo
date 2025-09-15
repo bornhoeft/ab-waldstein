@@ -1,0 +1,154 @@
+;;;---------------------------------------------------------
+;;; AB88
+;;; Copyright © 2018 Achim Bornhoeft
+;;;---------------------------------------------------------
+
+(load (merge-pathnames "functions.lisp" *load-truename*))
+(load (merge-pathnames "global.opmo" *load-truename*))
+
+;;;---------------------------------------------------------
+;;; Initialisation
+;;;---------------------------------------------------------
+
+(setf size 8)
+(setf bars (gen-repeat size '(4/4)))
+(setf pause (length-span bars '(-w)))
+
+(setf 
+ piano1-1-rh pause piano1-1-lh pause piano1-2-rh pause piano1-2-lh pause 
+ piano1-3-rh pause piano1-3-lh pause piano2-1-rh pause piano2-1-lh pause
+ piano2-2-rh pause piano2-2-lh pause piano2-3-rh pause piano2-3-lh pause
+)
+
+;;;---------------------------------------------------------
+;;; Parameters
+;;;---------------------------------------------------------
+
+;;; Pitch
+
+#|
+; (gen-binary-euclidean 1 14 9 9) ; => (1 0 1 1 0 1 1 0 1 1 0 1 1 0)
+(defparameter eclid-chord (pattern-map '((1 0) 2) (gen-binary-euclidean 1 14 9 9)))
+; (2 1 2 1 2 1 2 1 2)
+
+(defparameter numbers (gen-palindrome (loop for i from 1 to 10 collect i)))
+
+(defparameter euclid-chord-loop 
+  (let ((reps (reduce #'+ numbers)))
+  (gen-repeat-seq reps 1 1 eclid-chord)))
+
+(defparameter grouped-chord
+  (group-lst euclid-chord-loop numbers))
+
+(defparameter fan (flatten
+  (loop for i in grouped-chord
+    for j from 1
+    collect (if (oddp j) i
+              (loop for k in i collect (* -1 k))))))
+
+(defparameter integers (integer-transpose -4 (dx-x fan)))
+; (list-plot integers :zero-based t :point-radius 2 :join-points t)
+
+(defparameter no-integers (length integers))
+
+; with seed
+; erst die Aufteillung in Einzeltöne und Intervalle festlegen und dann oktavieren, 
+; damit die Töne nicht zuweit auseinander liegen ?
+
+(defparameter octave-integers 
+  (loop for i in integers
+  for j in (gen-transition 3 1 (length integers) 1.5 :rounded t)
+  collect (+ i (* (+-1) (random j) 12))))
+
+(defparameter pitches (integer-to-pitch octave-integers))
+
+(defparameter octave-pitches (flatten (chordize (group-lst pitches (rnd-sum (length pitches) '(1 4))))))
+|#
+
+;;; Duration
+
+#|
+(defparameter trans (gen-transition 5/4 0 42 0.755))
+
+(defparameter durations 
+  (loop for i in trans
+    with notedur = 1/16
+    for quantres = (quant (* -1 (- i notedur)) '(1/16))
+    collect notedur
+    when (not (zerop quantres))
+    collect quantres
+    end))
+|#
+
+(defparameter frames (loop for i in (rnd-order (gen-transition 5 1 13 1.15 :rounded t) :seed 7) collect (/ i 4)))
+
+(defparameter durations
+  (loop for i in frames
+    collect 1/16
+    collect (- 1/16 i)))
+
+;;;---------------------------------------------------------
+;;; Parts
+;;;---------------------------------------------------------
+
+(setf piano2-2-rh (make-omn :pitch (midi-to-pitch '(63)) :length durations))
+   
+;;; ambitus-filter für Aufteilung auf einzelne Parts verwenden
+
+;;;---------------------------------------------------------
+;;; Score and Layout
+;;;---------------------------------------------------------
+
+(def-score field-points
+           (:title "AB88"
+                   :composer "Achim Bornhoeft"
+                   :copyright "Copyright © 2018"
+                   :key-signature 'chromatic
+                   :time-signature '((1 1 1 1) 4)
+                   :tempo 80
+                   :layout 
+                   (list
+                    (bracket-group
+                     (brace-group 
+                      (treble-layout 'piano1-1-rh) 
+                      (treble-layout 'piano1-1-lh) :name "Piano 1.1" :abbr "Pno 1.1")
+                     (brace-group
+                      (treble-layout 'piano1-2-rh) 
+                      (treble-layout 'piano1-2-lh) :name "Piano 1.2" :abbr "Pno 1.2")
+                     (brace-group
+                      (bass-layout 'piano1-3-rh) 
+                      (bass-layout 'piano1-3-lh) :name "Piano 1.3" :abbr "Pno 1.3"))
+                    (bracket-group
+                     (brace-group
+                      (treble-layout 'piano2-1-rh)
+                      (treble-layout 'piano2-1-lh) :name "Piano 2.1" :abbr "Pno 2.1")
+                     (brace-group
+                      (treble-layout 'piano2-2-rh) 
+                      (bass-layout 'piano2-2-lh) :name "Piano 2.2" :abbr "Pno 2.2")
+                     (brace-group
+                      (bass-layout 'piano2-3-rh)
+                      (bass-layout'piano2-3-lh) :name "Piano 2.3" :abbr "Pno 2.3"))))	
+  ;;; Piano I
+  
+  (piano1-1-rh :omn piano1-1-rh :channel 1 :pan 32)  
+  (piano1-1-lh :omn piano1-1-lh :channel 2 :pan 32)
+  
+  (piano1-2-rh :omn piano1-2-rh :channel 3 :pan 32)
+  (piano1-2-lh :omn piano1-2-lh :channel 4 :pan 32)
+  
+  (piano1-3-rh :omn piano1-3-rh :channel 5 :pan 32)
+  (piano1-3-lh :omn piano1-3-lh :channel 6 :pan 32)
+  
+  ;;; Piano II
+  
+  (piano2-1-rh :omn piano2-1-rh :channel 7 :pan 96)
+  (piano2-1-lh :omn piano2-1-lh :channel 8 :pan 96)
+  
+  (piano2-2-rh :omn piano2-2-rh :channel 9 :pan 96)
+  (piano2-2-lh :omn piano2-2-lh :channel 11 :pan 96) ; channel 10: percussion!
+  
+  (piano2-3-rh :omn piano2-3-rh :channel 12 :pan 96)
+  (piano2-3-lh :omn piano2-3-lh :channel 13 :pan 96))
+
+(display-musicxml 'field-points)
+(display-midi 'field-points)

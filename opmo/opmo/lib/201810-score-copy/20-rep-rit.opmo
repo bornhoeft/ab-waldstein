@@ -1,0 +1,231 @@
+;;;---------------------------------------------------------
+;;; AB88
+;;; Copyright © 2018 Achim Bornhoeft
+;;;
+;;; 20-rep-rit-2
+;;;
+;;;
+;;;---------------------------------------------------------
+
+(load (merge-pathnames "functions.lisp" *load-truename*))
+(load (merge-pathnames "global.opmo" *load-truename*))
+
+;;;---------------------------------------------------------
+;;; Initialisation
+;;;---------------------------------------------------------
+
+(setf size 8)
+(setf bars (gen-repeat size '(4/4)))
+(setf pause (length-span bars '(-w)))
+
+(setf piano1-1-rh pause piano1-1-lh pause piano1-2-rh pause piano1-2-lh pause 
+      piano1-3-rh pause piano1-3-lh pause piano2-1-rh pause piano2-1-lh pause
+      piano2-2-rh pause piano2-2-lh pause piano2-3-rh pause piano2-3-lh pause)
+
+(init-seed 22)
+
+;;;---------------------------------------------------------
+;;; Parameters
+;;;---------------------------------------------------------
+
+#|
+;;; all-pitches see global.opmo
+(defparameter pitch-ranges
+  (loop for i in
+  (list
+   (append pitches-piano1-1 pitches-piano2-1)
+   (append pitches-piano1-2 pitches-piano2-2)
+   (append pitches-piano 1-3 pitches-piano2-3))
+    collect (sort (remove-duplicates i) #'<)))
+
+(defparameter all-ranges-1
+  (loop for i in pitch-ranges append
+    (loop repeat 2 collect
+      (loop for j from 0 to (- (length i) 1) by 2
+        collect (nth j i)))))
+
+;; (length (first all-ranges))
+
+
+(defparameter all-ranges
+  (loop for i in '(77 49 21) append
+    (loop repeat 2 collect
+      (dx-x '(2 1 2 2 2 1 2 2 2 1 2 2 2 1 2 2) i))))
+|#
+
+(defparameter all-ranges
+  (loop for i in '(77 49 21) append
+    (loop repeat 2 collect
+      (dx-x '(2 2 2 2 2 2 2 2 2 2 2 2 2 2) i))))
+
+;; (length (first all-ranges))
+  
+;;; pitch repetitions
+
+(defparameter all-durations
+(length-adjust 20
+(list
+(loop for i in (gen-transition 1/8 15/8 19 0.85) collect (quant i '(1/8 1/12)))
+(loop for i in (gen-transition 1/8 14/8 20 0.85) collect (quant i '(1/8 1/12)))
+(loop for i in (gen-transition 1/8 13/8 22 0.9) collect (quant i '(1/8 1/12)))
+(loop for i in (gen-transition 1/8 12/8 23 0.83) collect (quant i '(1/8 1/12)))
+(loop for i in (gen-transition 1/8 11/8 25 0.85) collect (quant i '(1/8 1/12)))
+(loop for i in (gen-transition 1/8 10/8 28 0.9) collect (quant i '(1/8 1/12))))
+:type 'r :position 'e))
+ 
+;; (length all-durations)
+;; (loop for i in all-durations collect (length i)) => (19 20 22 23 25 28)
+
+#|
+(defun rep-pitches (total values &key norep seed)
+  (let* ((size (gen-trim-sum total (gen-transition 4 1 10 0.8 :rounded t)))
+         (pitch (rnd-sample (length size) values :norep norep :seed seed)))
+    (gen-repeat size pitch)))
+
+;; (rep-pitches 20 (midi-to-pitch '(60 53 87)) :norep t :seed 123) 
+
+(defun rep-pitches (total lis &key norep seed)
+  (let* ((rep-trans (mapcar #'round (scaling-sum total (gen-transition 3 1 10 0.8))))
+         (pitches (pitch-tend (length rep-trans) lis :norep norep :seed seed)))
+    (gen-repeat rep-trans pitches)))
+
+;; (rep-pitches 20 (midi-to-pitch '(60 53 87)) :norep t :seed 123)
+|#
+
+(defun pitch-tend (total lis &key seed)
+  (let* ((len-1 (- (length lis) 1))
+         (ids (loop for i from 0 to len-1 collect i))
+         (left-half (gen-transition 0 (- (half-list ids) 1) total 1 :rounded t))
+        (right-half (gen-transition len-1 (- (half-list ids) 1) total 1 :rounded t)))
+    (loop for i in left-half
+      for j in right-half 
+      initially (init-seed seed)
+      collect
+      (nth (first (rnd-number 1 i j)) lis))))
+#|
+(list-plot
+(pitch-tend 20 '(0 1 2 3 4 5 6 7 8 9 10) :seed 123)
+	         :point-radius 2
+	         :join-points t)
+
+(half-list '(0 1 2 3 4 5 6 7 8 9 10))
+|#
+
+(defun rep-pitches (total lis &key seed)
+  (let* ((rep-trans (mapcar #'round (scaling-sum total (gen-transition 2 1 14 0.8))))
+         (pitches (pitch-tend (length rep-trans) lis :seed seed)))
+    (gen-repeat rep-trans pitches)))
+
+;; (rep-pitches 20 (midi-to-pitch (first all-ranges)) :seed 234)
+;; (mapcar #'round (scaling-sum 20 (gen-transition 2 1 14 0.8)))
+
+#|
+(defparameter all-pitches
+  (mcflatten
+  (loop for i in all-durations
+  for k in all-ranges
+  initially (rnd-seed 12) ; 123
+  collect (rep-pitches (length i) (midi-to-pitch k) :norep t :seed (seed)))))
+
+
+(defparameter all-pitches
+  (mcflatten
+  (loop for i in all-durations
+  for k in all-ranges
+  initially (rnd-seed 789) ; 123
+  collect (rep-pitches (length i) (midi-to-pitch k) :seed (seed)))))
+|#
+
+(defparameter all-pitches 
+  (mcflatten
+  (loop for i in all-durations
+  for k in all-ranges
+  initially (rnd-seed 789) ; 123
+  collect (midi-to-pitch (pitch-tend (length i) k)))))
+
+;; (loop for i in all-pitches collect (length i))
+;;; FALSCH!!!: (19 20 22 22 24 28)
+
+(defparameter all-velocities
+  (loop for i in all-durations collect
+    (append (cons 'p (loop repeat (- (length i) 2) collect '>)) (list 'PPP))))
+                
+;;;---------------------------------------------------------
+;;; Parts
+;;;---------------------------------------------------------
+
+(setf all-voices
+      (set-assignment 'voice
+        (make-omn
+         :pitch all-pitches
+         :length all-durations
+         :velocity all-velocities))) 
+
+(setf piano1-1-rh voice0 piano1-2-rh voice2 piano1-3-rh voice4
+      piano2-1-rh voice1 piano2-2-rh voice3 piano2-3-rh voice5)
+
+;;;---------------------------------------------------------
+;;; Score and Layout
+;;;---------------------------------------------------------
+
+(def-score 20-rep-rit-2
+           (:title "AB88"
+                   :composer "Achim Bornhoeft"
+                   :copyright "Copyright © 2018"
+                   :key-signature 'chromatic
+                   :time-signature '((1 1 1 1) 4)
+                   :tempo 80
+                   :layout 
+                   (list
+                    (bracket-group
+                     (brace-group 
+                      (treble-layout 'piano1-1-rh) 
+                      (treble-layout 'piano1-1-lh) :name "Piano 1.1" :abbr "Pno 1.1")
+                     (brace-group
+                      (treble-layout 'piano1-2-rh) 
+                      (treble-layout 'piano1-2-lh) :name "Piano 1.2" :abbr "Pno 1.2")
+                     (brace-group
+                      (bass-layout 'piano1-3-rh) 
+                      (bass-layout 'piano1-3-lh) :name "Piano 1.3" :abbr "Pno 1.3"))
+                    (bracket-group
+                     (brace-group
+                      (treble-layout 'piano2-1-rh)
+                      (treble-layout 'piano2-1-lh) :name "Piano 2.1" :abbr "Pno 2.1")
+                     (brace-group
+                      (treble-layout 'piano2-2-rh) 
+                      (bass-layout 'piano2-2-lh) :name "Piano 2.2" :abbr "Pno 2.2")
+                     (brace-group
+                      (bass-layout 'piano2-3-rh)
+                      (bass-layout'piano2-3-lh) :name "Piano 2.3" :abbr "Pno 2.3"))))	
+  
+  ;;; Piano I
+  
+  (piano1-1-rh :omn piano1-1-rh :channel 1 :pan 32)  
+  (piano1-1-lh :omn piano1-1-lh :channel 2 :pan 32)
+  
+  (piano1-2-rh :omn piano1-2-rh :channel 3 :pan 32)
+  (piano1-2-lh :omn piano1-2-lh :channel 4 :pan 32)
+  
+  (piano1-3-rh :omn piano1-3-rh :channel 5 :pan 32)
+  (piano1-3-lh :omn piano1-3-lh :channel 6 :pan 32)
+  
+  ;;; Piano II
+  
+  (piano2-1-rh :omn piano2-1-rh :channel 7 :pan 96)
+  (piano2-1-lh :omn piano2-1-lh :channel 8 :pan 96)
+  
+  (piano2-2-rh :omn piano2-2-rh :channel 9 :pan 96)
+  (piano2-2-lh :omn piano2-2-lh :channel 11 :pan 96)
+  
+  (piano2-3-rh :omn piano2-3-rh :channel 12 :pan 96)
+  (piano2-3-lh :omn piano2-3-lh :channel 13 :pan 96))
+
+(display-musicxml '20-rep-rit-2)
+(display-midi '20-rep-rit-2)
+
+#|
+(with-open-file (file "~/Desktop/20-rep-rit-2.xml" :direction :output :if-exists :supersede)
+  (score-to-musicxml (get-score '20-rep-rit-2) file))
+|#
+
+(list (midi-to-pitch 21))
